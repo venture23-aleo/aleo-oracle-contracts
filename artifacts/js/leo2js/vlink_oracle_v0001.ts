@@ -22,7 +22,9 @@ import {
   parseJSONLikeString
 } from "@doko-js/core";
 import {
-  PrivateKey
+  PrivateKey,
+  Account,
+  RecordCiphertext
 } from "@provablehq/sdk"
 
 

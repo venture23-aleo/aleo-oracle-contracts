@@ -38,8 +38,11 @@ program vlink_oracle_v0001.aleo {
     mask_b: u128
   }
 
-  // owner of a contract
-  const owner: address = aleo1rhgdu77hgyqd3xjj8ucu3jj9r2krwz6mnzyd80gncr5fxcwlh5rsvzp9px;
+  // initializer of a contract
+  const initializer: address = aleo1rhgdu77hgyqd3xjj8ucu3jj9r2krwz6mnzyd80gncr5fxcwlh5rsvzp9px;
+
+  const OWNER_INDEX: bool = true;
+  mapping admin: bool => address;
 
   // unique_id is always stored with 0u8 key
   mapping sgx_unique_id: u8 => UniqueID;
@@ -60,26 +63,56 @@ program vlink_oracle_v0001.aleo {
   // or just hash of notarization request for the lastest stored data
   mapping nitro_attested_data: u128 => AttestedData;
 
-  // set new enclave unique id which is going to be used to verify sgx report
-  async transition set_unique_id(public unique_id: UniqueID) -> Future {
-    // only owner can change enclave unique id
-    assert_eq(owner, self.caller);
 
-    return finalize_set_unique_id(unique_id);
+  async transition initialize(public owner_address: address) -> Future {
+    // can be called only once
+    assert_eq(self.caller, initializer);
+    return finalize_initialize(owner_address);
   }
 
-  async function finalize_set_unique_id(public unique_id: UniqueID) {
+  // finalize initialization
+  async function finalize_initialize(public owner_address: address) {
+    Mapping::set(admin, OWNER_INDEX, owner_address);
+  }
+
+
+  /// Update the existing admin
+  /// Can only be called from admin
+  async transition transfer_ownership(public new_owner: address) -> Future{
+    return finalize_transfer_ownership(self.caller, new_owner);
+  }
+
+  async function finalize_transfer_ownership(from: address, new_owner: address) {
+    // Get the admin address
+    // If program not initialized, this fails
+    let current_owner: address = Mapping::get(admin, OWNER_INDEX);
+    assert_eq(from, current_owner);
+
+    Mapping::set(admin, OWNER_INDEX, new_owner);
+  }
+
+  // set new enclave unique id which is going to be used to verify sgx report
+  async transition set_unique_id(public unique_id: UniqueID) -> Future {
+    return finalize_set_unique_id(self.caller, unique_id);
+  }
+
+  async function finalize_set_unique_id(public from: address, public unique_id: UniqueID) {
+    // caller must be admin
+    let current_owner: address = Mapping::get(admin, OWNER_INDEX);
+    assert_eq(from, current_owner);
+
     Mapping::set(sgx_unique_id, 0u8, unique_id);
   }
 
   async transition set_pcr_values(public pcr_values: PcrValues) -> Future {
-    // only owner can change pcr values
-    assert_eq(owner, self.caller);
-
-    return finalize_set_pcr_values(pcr_values);
+    return finalize_set_pcr_values(self.caller, pcr_values);
   }
 
-  async function finalize_set_pcr_values(public pcr_values: PcrValues) {
+  async function finalize_set_pcr_values(public from: address, public pcr_values: PcrValues) {
+    // caller must be admin
+    let current_owner: address = Mapping::get(admin, OWNER_INDEX);
+    assert_eq(from, current_owner);
+
     Mapping::set(nitro_pcr_values, 0u8, pcr_values);
   }
 
@@ -87,19 +120,22 @@ program vlink_oracle_v0001.aleo {
     public pub_key: address,
     public allowed: bool
   ) -> Future {
-    // only owner can change list of allowed keys
-    assert_eq(owner, self.caller);
-
     return finalize_set_key(
+      self.caller,
       pub_key,
       allowed
     );
   }
 
   async function finalize_set_key(
+    public from: address,
     public pub_key: address,
     public allowed: bool
   ) {
+    // caller must be admin
+    let current_owner: address = Mapping::get(admin, OWNER_INDEX);
+    assert_eq(from, current_owner);
+
     Mapping::set(allowed_keys, pub_key, allowed);
   }
 
