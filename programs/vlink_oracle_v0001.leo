@@ -64,7 +64,7 @@ program vlink_oracle_v0001.aleo {
   // or just hash of notarization request for the lastest stored data
   mapping sgx_attested_data: u128 => AttestedData;
 
-  // storage of data attested by sgx
+  // storage of data attested by nitro
   // hash of notarization request with timestamp => Attested_Data
   // or just hash of notarization request for the lastest stored data
   mapping nitro_attested_data: u128 => AttestedData;
