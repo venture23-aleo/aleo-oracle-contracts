@@ -40,9 +40,14 @@ program vlink_oracle_v0001.aleo {
 
   // initializer of a contract
   const initializer: address = aleo1rhgdu77hgyqd3xjj8ucu3jj9r2krwz6mnzyd80gncr5fxcwlh5rsvzp9px;
-
   const OWNER_INDEX: bool = true;
+  const STATUS_INDEX: u8 = 0u8;
+  const PAUSED_VALUE: bool = true;
+  const UNPAUSED_VALUE: bool = false;
+
   mapping admin: bool => address;
+  mapping status: u8 => bool;
+
 
   // unique_id is always stored with 0u8 key
   mapping sgx_unique_id: u8 => UniqueID;
@@ -73,6 +78,7 @@ program vlink_oracle_v0001.aleo {
   // finalize initialization
   async function finalize_initialize(public owner_address: address) {
     Mapping::set(admin, OWNER_INDEX, owner_address);
+    Mapping::set(status, STATUS_INDEX, PAUSED_VALUE); // paused by default
   }
 
 
@@ -90,6 +96,40 @@ program vlink_oracle_v0001.aleo {
 
     Mapping::set(admin, OWNER_INDEX, new_owner);
   }
+
+
+    //////////////////////////////////
+    //// Pause / Unpause //////
+    //////////////////////////////////
+
+    /// Pauses the oracle
+    async transition pause() -> Future{
+        return finalize_pause(self.caller);
+    }
+
+    async function finalize_pause(from: address) {
+        // Get the owner address
+        // If program not initialized, this fails
+        let owner: address = Mapping::get(admin, OWNER_INDEX);
+        assert_eq(from, owner);
+
+        Mapping::set(status, STATUS_INDEX, PAUSED_VALUE);
+    }
+
+    /// Unpauses the oracle
+    /// There can be transfers only when the oracle is unpaused
+    async transition unpause() -> Future{
+        return finalize_unpause(self.caller);
+    }
+
+    async function finalize_unpause(from: address) {
+        // Get the owner address
+        // If program not initialized, this fails
+        let owner: address = Mapping::get(admin, OWNER_INDEX);
+        assert_eq(from, owner);
+
+        Mapping::set(status, STATUS_INDEX, PAUSED_VALUE);
+    }
 
   // set new enclave unique id which is going to be used to verify sgx report
   async transition set_unique_id(public unique_id: UniqueID) -> Future {
@@ -394,6 +434,8 @@ program vlink_oracle_v0001.aleo {
     let pub_key_allowed: bool = Mapping::get_or_use(allowed_keys, pub_key, false);
     assert(pub_key_allowed);
 
+    assert(Mapping::get(status, STATUS_INDEX) == UNPAUSED_VALUE); // oracle must be unpaused
+
     // verify unique id from the TEE report
     let unique_id: UniqueID = Mapping::get(sgx_unique_id, 0u8);
     assert_eq(unique_id.chunk_1, report_unique_id_1);
@@ -483,6 +525,8 @@ program vlink_oracle_v0001.aleo {
   ) {
     let pub_key_allowed: bool = Mapping::get_or_use(allowed_keys, pub_key, false);
     assert(pub_key_allowed);
+
+    assert(Mapping::get(status, STATUS_INDEX) == UNPAUSED_VALUE); // oracle must be unpaused
 
     let pcr_values: PcrValues = Mapping::get(nitro_pcr_values, 0u8);
     assert_eq(pcr_values, report_pcr_values);
