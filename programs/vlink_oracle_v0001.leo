@@ -1,4 +1,12 @@
 program vlink_oracle_v0001.aleo {
+
+    // This constructor is for the "admin" mode.
+    // It ensures that only the designated admin can upgrade the program.
+    @admin(address="aleo1rhgdu77hgyqd3xjj8ucu3jj9r2krwz6mnzyd80gncr5fxcwlh5rsvzp9px")
+    async constructor() {
+        // The Leo compiler automatically generates the constructor logic.
+    }
+
   // 32 byte enclave unique_id
   // split into 2 16 byte u128 chunks
   struct UniqueID {
