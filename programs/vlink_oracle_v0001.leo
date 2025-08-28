@@ -44,6 +44,7 @@ program vlink_oracle_v0001.aleo {
   const STATUS_INDEX: u8 = 0u8;
   const PAUSED_VALUE: bool = true;
   const UNPAUSED_VALUE: bool = false;
+  const VALID_HTTP_STATUS: u128 = 200u128;
 
   mapping admin: bool => address;
   mapping status: u8 => bool;
@@ -397,6 +398,7 @@ program vlink_oracle_v0001.aleo {
     public sig: signature,
     public pub_key: address
   ) -> Future {
+    assert_eq(report_data.c0.f4, VALID_HTTP_STATUS);
     verify_sgx_report(report_data, report, sig, pub_key);
 
     let request_hash: u128 = get_request_hash(report_data);
@@ -464,6 +466,7 @@ program vlink_oracle_v0001.aleo {
     let hash_blocks: (u128, u128, u128, u128) = select_chunk(report.c8, data_position.block_index);
     let data_hash_from_report: u128 = extract_value(hash_blocks.0, hash_blocks.1, data_position);
 
+    assert_eq(report_data.c0.f4, VALID_HTTP_STATUS);
     verify_nitro_report(report_data, report, sig, pub_key, data_hash_from_report);
 
     let request_hash: u128 = get_request_hash(report_data);
