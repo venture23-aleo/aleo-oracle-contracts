@@ -137,7 +137,7 @@ program vlink_oracle_v0001.aleo {
         let owner: address = Mapping::get(admin, OWNER_INDEX);
         assert_eq(from, owner);
 
-        Mapping::set(status, STATUS_INDEX, PAUSED_VALUE);
+        Mapping::set(status, STATUS_INDEX, UNPAUSED_VALUE);
     }
 
   // set new enclave unique id which is going to be used to verify sgx report
@@ -613,23 +613,19 @@ program vlink_oracle_v0001.aleo {
   }
 
 
-  async transition update_historic_data (public is_sgx_attested_data: bool, public timestamped_hash: u128, public request_hash: u128, public attested_data: AttestedData) -> Future {
-      return finalize_update_historic_data(self.caller, is_sgx_attested_data, timestamped_hash, request_hash, attested_data);
+  async transition update_historic_data (public is_sgx_attested_data: bool, public timestamped_hash: u128, public attested_data: AttestedData) -> Future {
+      return finalize_update_historic_data(self.caller, is_sgx_attested_data, timestamped_hash, attested_data);
   }
 
-  async function finalize_update_historic_data(public from: address, public is_sgx_attested_data: bool, public timestamped_hash: u128, public request_hash: u128, public attested_data: AttestedData) {
+  async function finalize_update_historic_data(public from: address, public is_sgx_attested_data: bool, public timestamped_hash: u128, public attested_data: AttestedData) {
     let current_owner: address = Mapping::get(admin, OWNER_INDEX);
     assert_eq(from, current_owner);
 
     if (is_sgx_attested_data) {
       assert(Mapping::contains(sgx_attested_data, timestamped_hash));
-      assert(Mapping::contains(sgx_attested_data, request_hash));
       Mapping::set(sgx_attested_data, timestamped_hash, attested_data);
-      Mapping::set(sgx_attested_data, request_hash, attested_data);
     } else {  
       assert(Mapping::contains(nitro_attested_data, timestamped_hash));
-      assert(Mapping::contains(nitro_attested_data, request_hash));
-      Mapping::set(nitro_attested_data, request_hash, attested_data);
       Mapping::set(nitro_attested_data, timestamped_hash, attested_data);
     }
 

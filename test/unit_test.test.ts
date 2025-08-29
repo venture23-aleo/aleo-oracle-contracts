@@ -2,14 +2,20 @@ import { ExecutionMode, parseJSONLikeString } from '@doko-js/core';
 import data from './eth_usdc.json';
 import { getDataChunk, getReportData, getReport, getUniqueID } from '../artifacts/js/leo2js/testing_offical_oracle_v1';
 import { Vlink_oracle_v0001Contract } from '../artifacts/js/vlink_oracle_v0001';
+import { AttestedData } from '../artifacts/js/types/vlink_oracle_v0001';
 const TIMEOUT = 20000_000;
 
 // Available modes are evaluate | execute (Check README.md for further description)
 const mode = ExecutionMode.SnarkExecute;
 // Contract class initialization
 const oracle = new Vlink_oracle_v0001Contract({ mode });
-const [admin, aleoUser2, aleoUser3] = oracle.getAccounts();
+const [owner, aleoUser2, aleoUser3] = oracle.getAccounts();
+const OWNER_INDEX = true;
 
+  const STATUS_INDEX = 0;
+  const PAUSED_VALUE = true;
+  const UNPAUSED_VALUE = false;
+  const VALID_HTTP_STATUS = BigInt("200");
 
 describe('deploy test', () => {
 
@@ -18,6 +24,59 @@ describe('deploy test', () => {
         test('Deployment', async () => {
             const deployTx = await oracle.deploy();
             await deployTx.wait();
+        }, TIMEOUT);
+
+        test.failing('cannot initialized by non-initializer', async () => {
+            oracle.connect(aleoUser2);
+            const deployTx = await oracle.initialize(owner);
+            await deployTx.wait();
+        }, TIMEOUT);
+
+        test('initialized by initializer', async () => {
+            oracle.connect(owner);
+            const deployTx = await oracle.initialize(owner);
+            await deployTx.wait();
+            expect(await oracle.admin(OWNER_INDEX)).toBe(owner);
+        }, TIMEOUT);
+
+
+        test.failing('cannot initialize twice', async () => {
+            oracle.connect(owner);
+            const deployTx = await oracle.initialize(owner);
+            await deployTx.wait();
+        }, TIMEOUT);
+    });
+
+    describe("Pausability", () => {
+        test.failing("should not unpause by non-owner", async () => {
+            oracle.connect(aleoUser3);
+            const tx = await oracle.unpause();
+            expect(await oracle.status(STATUS_INDEX)).toBe(PAUSED_VALUE);
+            await tx.wait();
+        }, TIMEOUT);
+
+        test("owner can unpause", async () => {
+            expect(await oracle.status(STATUS_INDEX)).toBe(UNPAUSED_VALUE);
+            oracle.connect(owner);
+            const tx = await oracle.unpause();
+            await tx.wait();
+            expect(await oracle.status(STATUS_INDEX)).toBe(UNPAUSED_VALUE);
+        },
+            TIMEOUT
+        );
+
+        test.failing("should not pause by non-owner", async () => {
+            oracle.connect(aleoUser3);
+            const tx = await oracle.pause();
+            expect(await oracle.status(STATUS_INDEX)).toBe(UNPAUSED_VALUE);
+            await tx.wait();
+        }, TIMEOUT);
+
+        test("owner can pause", async () => {
+            oracle.connect(owner);
+            const tx = await oracle.pause();
+            await tx.wait();
+            expect(await oracle.status(STATUS_INDEX)).toBe(PAUSED_VALUE);
         }, TIMEOUT);
     });
 
@@ -33,7 +92,7 @@ describe('deploy test', () => {
         }, TIMEOUT);
 
         test('set unique_id by owner', async () => {
-            oracle.connect(admin);
+            oracle.connect(owner);
             const setTx = await oracle.set_unique_id(unique_id);
             await setTx.wait();
             expect(await oracle.sgx_unique_id(0)).toStrictEqual(unique_id);
@@ -59,7 +118,7 @@ describe('deploy test', () => {
         }, TIMEOUT);
 
         test('set pcr_values by owner', async () => {
-            oracle.connect(admin);
+            oracle.connect(owner);
             const setTx = await oracle.set_pcr_values(pcrValues);
             await setTx.wait();
             expect(await oracle.nitro_pcr_values(0)).toStrictEqual(pcrValues);
@@ -75,7 +134,7 @@ describe('deploy test', () => {
         }, TIMEOUT);
 
         test('set pcr_values by owner', async () => {
-            oracle.connect(admin);
+            oracle.connect(owner);
             const setTx = await oracle.set_key(aleoUser3, true);
             await setTx.wait();
             expect(await oracle.allowed_keys(aleoUser3)).toBeTruthy;
@@ -556,7 +615,7 @@ describe('deploy test', () => {
             const signer = "aleo1czu58vskrq0m2gqlpggucvcj2w2zht4unh4jg23gq5a4cp3fespsawtj6t";
             const signature = "sign1c0ts7e6mem08l62fgxpqexfjk742kxus6ffe7d8apd7vxdeduyq828yzl43wc35g6nl4h2l58lk72pesp57msqmxwe3l3xhw2hnvwqhy7pztupfz6yycl4k9gqaf2450q2e4p2knyst63uuqagnu2w2xpcm9hkflwsrm4gq2a8eduhv8fs434lhehu7gwg80apn6l35wjkw3z8jpgca";
 
-            oracle.connect(admin);
+            oracle.connect(owner);
             const setTx = await oracle.set_data_sgx(ReportData, Report, signature, signer);
             await setTx.wait();
         }, TIMEOUT);
@@ -1031,7 +1090,7 @@ describe('deploy test', () => {
         const signer = "aleo1czu58vskrq0m2gqlpggucvcj2w2zht4unh4jg23gq5a4cp3fespsawtj6t";
         const signature = "sign1c0ts7e6mem08l62fgxpqexfjk742kxus6ffe7d8apd7vxdeduyq828yzl43wc35g6nl4h2l58lk72pesp57msqmxwe3l3xhw2hnvwqhy7pztupfz6yycl4k9gqaf2450q2e4p2knyst63uuqagnu2w2xpcm9hkflwsrm4gq2a8eduhv8fs434lhehu7gwg80apn6l35wjkw3z8jpgca";
 
-        oracle.connect(admin);
+        oracle.connect(owner);
         const setTx = await oracle.set_data_sgx(ReportData, Report, signature, signer);
         await setTx.wait();
         }, TIMEOUT);
@@ -1506,7 +1565,7 @@ describe('deploy test', () => {
         const signer = "aleo1czu58vskrq0m2gqlpggucvcj2w2zht4unh4jg23gq5a4cp3fespsawtj6t";
         const signature = "sign1c0ts7e6mem08l62fgxpqexfjk742kxus6ffe7d8apd7vxdeduyq828yzl43wc35g6nl4h2l58lk72pesp57msqmxwe3l3xhw2hnvwqhy7pztupfz6yycl4k9gqaf2450q2e4p2knyst63uuqagnu2w2xpcm9hkflwsrm4gq2a8eduhv8fs434lhehu7gwg80apn6l35wjkw3z8jpgca";
 
-        oracle.connect(admin);
+        oracle.connect(owner);
         const setTx = await oracle.set_data_sgx(ReportData, Report, signature, signer);
         await setTx.wait();
         }, TIMEOUT);
@@ -1981,12 +2040,12 @@ describe('deploy test', () => {
         const signer = "aleo1czu58vskrq0m2gqlpggucvcj2w2zht4unh4jg23gq5a4cp3fespsawtj6t";
         const wrong_signature = "sign1c0ts7e6mem08l62fgxpqexfjk742kxus6ffe7d8apd7vxdeduyq828yzl43wc35g6nl4h2l58lk72pesp57msqmxwe3l3xhw2hnvwqhy7pztupfz6yycl4k9gqaf2450q2e4p2knyst63uuqagnu2w2xpcm9hkflwsrm4gq2a8eduhv8fs434lhehu7gwg80apn6l35wjkw3z8jpgcb";
 
-        oracle.connect(admin);
+        oracle.connect(owner);
         const setTx = await oracle.set_data_sgx(ReportData, Report, wrong_signature, signer);
         await setTx.wait();
         }, TIMEOUT);
 
-        test('failed when TEE public key is not allowed', async () => {
+        test.failing('cannot set data_sgx by owner if contract is paused', async () => {
         const ReportDataChunk1 = {
             f0:  BigInt("83078413625893051443950901841625343"),
             f1:  BigInt("4194544"),
@@ -2456,12 +2515,35 @@ describe('deploy test', () => {
         const signer = "aleo1czu58vskrq0m2gqlpggucvcj2w2zht4unh4jg23gq5a4cp3fespsawtj6t";
         const signature = "sign1c0ts7e6mem08l62fgxpqexfjk742kxus6ffe7d8apd7vxdeduyq828yzl43wc35g6nl4h2l58lk72pesp57msqmxwe3l3xhw2hnvwqhy7pztupfz6yycl4k9gqaf2450q2e4p2knyst63uuqagnu2w2xpcm9hkflwsrm4gq2a8eduhv8fs434lhehu7gwg80apn6l35wjkw3z8jpgca";
 
-        oracle.connect(admin);
+        oracle.connect(owner);
+
+        // setting keys
+        const setKeysTx = await oracle.set_key(signer, true);
+        await setKeysTx.wait();
+
+        // set sgx unique id
+        const unique_id = {
+            chunk_1: Report.c0.f8,
+            chunk_2: Report.c0.f9
+        };
+        const setUniqueIdTx = await oracle.set_unique_id(unique_id);
+        await setUniqueIdTx.wait();
+
+
         const setTx = await oracle.set_data_sgx(ReportData, Report, signature, signer);
-        expect(await setTx.wait()).toStrictEqual([]);
+        await setTx.wait();
         }, TIMEOUT);
 
-        test('failed when unique id from the TEE report is not set', async () => {
+        test("unpause for testing", async () => {
+            expect(await oracle.status(STATUS_INDEX)).toBe(UNPAUSED_VALUE);
+            oracle.connect(owner);
+            const tx = await oracle.unpause();
+            await tx.wait();
+        },
+            TIMEOUT
+        );
+
+        test.failing('failed when TEE public key is not allowed', async () => {
         const ReportDataChunk1 = {
             f0:  BigInt("83078413625893051443950901841625343"),
             f1:  BigInt("4194544"),
@@ -2931,15 +3013,491 @@ describe('deploy test', () => {
         const signer = "aleo1czu58vskrq0m2gqlpggucvcj2w2zht4unh4jg23gq5a4cp3fespsawtj6t";
         const signature = "sign1c0ts7e6mem08l62fgxpqexfjk742kxus6ffe7d8apd7vxdeduyq828yzl43wc35g6nl4h2l58lk72pesp57msqmxwe3l3xhw2hnvwqhy7pztupfz6yycl4k9gqaf2450q2e4p2knyst63uuqagnu2w2xpcm9hkflwsrm4gq2a8eduhv8fs434lhehu7gwg80apn6l35wjkw3z8jpgca";
 
-        oracle.connect(admin);
+        oracle.connect(owner);
+        const setTx = await oracle.set_data_sgx(ReportData, Report, signature, signer);
+        await setTx.wait();
+        }, TIMEOUT);
+
+        test.failing('failed when unique id from the TEE report is not set', async () => {
+        const ReportDataChunk1 = {
+            f0:  BigInt("83078413625893051443950901841625343"),
+            f1:  BigInt("4194544"),
+            f2:  BigInt("2459651688519496"),
+            f3:  BigInt("1749193230"),
+            f4:  BigInt("200"),
+            f5:  BigInt("142821293454631051320862835823103406704"),
+            f6:  BigInt("148123008982277817231010402169006552165"),
+            f7:  BigInt("153455199263609451433511210995015447404"),
+            f8:  BigInt("81604270107650969765782987549440896873"),
+            f9:  BigInt("90820193226405451639137894329186660401"),
+            f10: BigInt("67"),
+            f11: BigInt("61493757501780816131600652826808967524"),
+            f12: BigInt("435459551856"),
+            f13: BigInt("0"),
+            f14: BigInt("5522759"),
+            f15: BigInt("221360928884514619394"),
+            f16: BigInt("258254417031933722629"),
+            f17: BigInt("13055389343712134841237569546"),
+            f18: BigInt("13856407623565317"),
+            f19: BigInt("156035770564570580066107481452631621659"),
+            f20: BigInt("3900269670161044694030315513202"),
+            f21: BigInt("162743726813863731210145153184655802480"),
+            f22: BigInt("101188681738744639914108759155086748777"),
+            f23: BigInt("149456393680743922584091041160660086377"),
+            f24: BigInt("42816717959947032433996830433837802860"),
+            f25: BigInt("132119436183189587630719372684727700264"),
+            f26: BigInt("64042929165508395635299690384626118507"),
+            f27: BigInt("61431102749981217983499061483759611950"),
+            f28: BigInt("13875"),
+            f29: BigInt("126657325042335875692993129968414752792"),
+            f30: BigInt("199117193818880370885963"),
+            f31: BigInt("55340232221128654848")
+        };
+
+        const ReportDataChunk2 = {
+            f0: BigInt("0"), f1: BigInt("0"), f2: BigInt("0"), f3: BigInt("0"), f4: BigInt("0"),
+            f5: BigInt("0"), f6: BigInt("0"), f7: BigInt("0"), f8: BigInt("0"),
+            f9: BigInt("0"), f10: BigInt("0"), f11: BigInt("0"), f12: BigInt("0"),
+            f13: BigInt("0"), f14: BigInt("0"), f15: BigInt("0"), f16: BigInt("0"),
+            f17: BigInt("0"), f18: BigInt("0"), f19: BigInt("0"), f20: BigInt("0"),
+            f21: BigInt("0"), f22: BigInt("0"), f23: BigInt("0"), f24: BigInt("0"),
+            f25: BigInt("0"), f26: BigInt("0"), f27: BigInt("0"), f28: BigInt("0"),
+            f29: BigInt("0"), f30: BigInt("0"), f31: BigInt("0")
+        }
+
+        const ReportDataChunk3 = {
+            f0: BigInt("0"), f1: BigInt("0"), f2: BigInt("0"), f3: BigInt("0"), f4: BigInt("0"),
+            f5: BigInt("0"), f6: BigInt("0"), f7: BigInt("0"), f8: BigInt("0"),
+            f9: BigInt("0"), f10: BigInt("0"), f11: BigInt("0"), f12: BigInt("0"),
+            f13: BigInt("0"), f14: BigInt("0"), f15: BigInt("0"), f16: BigInt("0"),
+            f17: BigInt("0"), f18: BigInt("0"), f19: BigInt("0"), f20: BigInt("0"),
+            f21: BigInt("0"), f22: BigInt("0"), f23: BigInt("0"), f24: BigInt("0"),
+            f25: BigInt("0"), f26: BigInt("0"), f27: BigInt("0"), f28: BigInt("0"),
+            f29: BigInt("0"), f30: BigInt("0"), f31: BigInt("0")
+        }
+
+        const ReportDataChunk4 = {
+            f0: BigInt("0"), f1: BigInt("0"), f2: BigInt("0"), f3: BigInt("0"), f4: BigInt("0"),
+            f5: BigInt("0"), f6: BigInt("0"), f7: BigInt("0"), f8: BigInt("0"),
+            f9: BigInt("0"), f10: BigInt("0"), f11: BigInt("0"), f12: BigInt("0"),
+            f13: BigInt("0"), f14: BigInt("0"), f15: BigInt("0"), f16: BigInt("0"),
+            f17: BigInt("0"), f18: BigInt("0"), f19: BigInt("0"), f20: BigInt("0"),
+            f21: BigInt("0"), f22: BigInt("0"), f23: BigInt("0"), f24: BigInt("0"),
+            f25: BigInt("0"), f26: BigInt("0"), f27: BigInt("0"), f28: BigInt("0"),
+            f29: BigInt("0"), f30: BigInt("0"), f31: BigInt("0")
+        }
+
+        const ReportDataChunk5 = {
+            f0: BigInt("0"), f1: BigInt("0"), f2: BigInt("0"), f3: BigInt("0"), f4: BigInt("0"),
+            f5: BigInt("0"), f6: BigInt("0"), f7: BigInt("0"), f8: BigInt("0"),
+            f9: BigInt("0"), f10: BigInt("0"), f11: BigInt("0"), f12: BigInt("0"),
+            f13: BigInt("0"), f14: BigInt("0"), f15: BigInt("0"), f16: BigInt("0"),
+            f17: BigInt("0"), f18: BigInt("0"), f19: BigInt("0"), f20: BigInt("0"),
+            f21: BigInt("0"), f22: BigInt("0"), f23: BigInt("0"), f24: BigInt("0"),
+            f25: BigInt("0"), f26: BigInt("0"), f27: BigInt("0"), f28: BigInt("0"),
+            f29: BigInt("0"), f30: BigInt("0"), f31: BigInt("0")
+        }
+
+        const ReportDataChunk6 = {
+            f0: BigInt("0"), f1: BigInt("0"), f2: BigInt("0"), f3: BigInt("0"), f4: BigInt("0"),
+            f5: BigInt("0"), f6: BigInt("0"), f7: BigInt("0"), f8: BigInt("0"),
+            f9: BigInt("0"), f10: BigInt("0"), f11: BigInt("0"), f12: BigInt("0"),
+            f13: BigInt("0"), f14: BigInt("0"), f15: BigInt("0"), f16: BigInt("0"),
+            f17: BigInt("0"), f18: BigInt("0"), f19: BigInt("0"), f20: BigInt("0"),
+            f21: BigInt("0"), f22: BigInt("0"), f23: BigInt("0"), f24: BigInt("0"),
+            f25: BigInt("0"), f26: BigInt("0"), f27: BigInt("0"), f28: BigInt("0"),
+            f29: BigInt("0"), f30: BigInt("0"), f31: BigInt("0")
+        }
+
+        const ReportDataChunk7 = {
+            f0: BigInt("0"), f1: BigInt("0"), f2: BigInt("0"), f3: BigInt("0"), f4: BigInt("0"),
+            f5: BigInt("0"), f6: BigInt("0"), f7: BigInt("0"), f8: BigInt("0"),
+            f9: BigInt("0"), f10: BigInt("0"), f11: BigInt("0"), f12: BigInt("0"),
+            f13: BigInt("0"), f14: BigInt("0"), f15: BigInt("0"), f16: BigInt("0"),
+            f17: BigInt("0"), f18: BigInt("0"), f19: BigInt("0"), f20: BigInt("0"),
+            f21: BigInt("0"), f22: BigInt("0"), f23: BigInt("0"), f24: BigInt("0"),
+            f25: BigInt("0"), f26: BigInt("0"), f27: BigInt("0"), f28: BigInt("0"),
+            f29: BigInt("0"), f30: BigInt("0"), f31: BigInt("0")
+        }
+
+        const ReportDataChunk8 = {
+            f0: BigInt("0"), f1: BigInt("0"), f2: BigInt("0"), f3: BigInt("0"), f4: BigInt("0"),
+            f5: BigInt("0"), f6: BigInt("0"), f7: BigInt("0"), f8: BigInt("0"),
+            f9: BigInt("0"), f10: BigInt("0"), f11: BigInt("0"), f12: BigInt("0"),
+            f13: BigInt("0"), f14: BigInt("0"), f15: BigInt("0"), f16: BigInt("0"),
+            f17: BigInt("0"), f18: BigInt("0"), f19: BigInt("0"), f20: BigInt("0"),
+            f21: BigInt("0"), f22: BigInt("0"), f23: BigInt("0"), f24: BigInt("0"),
+            f25: BigInt("0"), f26: BigInt("0"), f27: BigInt("0"), f28: BigInt("0"),
+            f29: BigInt("0"), f30: BigInt("0"), f31: BigInt("0")
+        }
+
+        const ReportData = {
+            c0: ReportDataChunk1,
+            c1: ReportDataChunk2,
+            c2: ReportDataChunk3,
+            c3: ReportDataChunk4,
+            c4: ReportDataChunk5,
+            c5: ReportDataChunk6,
+            c6: ReportDataChunk7,
+            c7: ReportDataChunk8,
+        }
+
+        const Report = {
+        c0: {
+            f0:  BigInt("87326886444949607284737"),
+            f1:  BigInt("68385684764541874837877569661087907843"),
+            f2:  BigInt("212810793247107972836521987657865927927"),
+            f3:  BigInt("59181406181154323133800401058"),
+            f4:  BigInt("562945928007696"),
+            f5:  BigInt("0"),
+            f6:  BigInt("0"),
+            f7:  BigInt("4261197881026906423301"),
+            f8:  BigInt("332573059209333697283035750545530245097"),
+            f9:  BigInt("12876599612630425400788585821304799478"),
+            f10: BigInt("0"),
+            f11: BigInt("0"),
+            f12: BigInt("14173362529388069478112537322908285721"),
+            f13: BigInt("165527990478049161092218747999037770344"),
+            f14: BigInt("0"),
+            f15: BigInt("0"),
+            f16: BigInt("0"),
+            f17: BigInt("0"),
+            f18: BigInt("0"),
+            f19: BigInt("0"),
+            f20: BigInt("65537"),
+            f21: BigInt("0"),
+            f22: BigInt("0"),
+            f23: BigInt("0"),
+            f24: BigInt("97453700143625969198602450171785274325"),
+            f25: BigInt("0"),
+            f26: BigInt("0"),
+            f27: BigInt("0"),
+            f28: BigInt("233689081431026658505440141348133933258"),
+            f29: BigInt("178431243757152969853735909593098990863"),
+            f30: BigInt("222521718577349731253013411240615597562"),
+            f31: BigInt("137724232061770787204589089211056168198")
+        },
+        c1: {
+            f0:  BigInt("232638938355533318366654005926536025422"),
+            f1:  BigInt("128180641402572767893502123921913000389"),
+            f2:  BigInt("280157746167917180235793552204935515601"),
+            f3:  BigInt("103230014128624756310015415239925406137"),
+            f4:  BigInt("2417834350209426452102800"),
+            f5:  BigInt("0"),
+            f6:  BigInt("0"),
+            f7:  BigInt("18301705540795061984198846840832"),
+            f8:  BigInt("123615811556065666520274272463920037888"),
+            f9:  BigInt("209499263356379724336450211831605846592"),
+            f10: BigInt("2248543967"),
+            f11: BigInt("0"),
+            f12: BigInt("158837950468731255509735392413912924160"),
+            f13: BigInt("90434782647414738426891946114991426246"),
+            f14: BigInt("4286301584"),
+            f15: BigInt("0"),
+            f16: BigInt("0"),
+            f17: BigInt("0"),
+            f18: BigInt("0"),
+            f19: BigInt("0"),
+            f20: BigInt("3096229038784512"),
+            f21: BigInt("0"),
+            f22: BigInt("0"),
+            f23: BigInt("0"),
+            f24: BigInt("77393426344345165169459259683805069312"),
+            f25: BigInt("4315652090427597037003403827864509585"),
+            f26: BigInt("1665050512"),
+            f27: BigInt("0"),
+            f28: BigInt("97567467964145802557956930940400828416"),
+            f29: BigInt("156024894977094307916437130004864121990"),
+            f30: BigInt("333892863136545040996596893220733339177"),
+            f31: BigInt("28585862271137679478755408386301921346")
+        },
+        c2: {
+            f0:  BigInt("12004732790720997080891679056024666159"),
+            f1:  BigInt("33355783264191645768789692391696894730"),
+            f2:  BigInt("60049829442654826911932580370866510618"),
+            f3:  BigInt("86749189800108151757823289210582680109"),
+            f4:  BigInt("89408314000749348227924972757823866196"),
+            f5:  BigInt("117383741348392418310106626944175524418"),
+            f6:  BigInt("157141973501937639046668999640638187574"),
+            f7:  BigInt("97503207721845674876971504886189486896"),
+            f8:  BigInt("86749273701475050706988475276636220026"),
+            f9:  BigInt("158631690561421923906332780270533558599"),
+            f10: BigInt("93416606896095089271959456328616793447"),
+            f11: BigInt("137254744610637277812201950427277515312"),
+            f12: BigInt("116111120132334989407775998359278534983"),
+            f13: BigInt("66972523035309989634726502375825172343"),
+            f14: BigInt("65481625292307003626476315512622446644"),
+            f15: BigInt("108069389777510993040098564704483567694"),
+            f16: BigInt("108022049914157203793589838845128701811"),
+            f17: BigInt("114663061532802810022460237849614370132"),
+            f18: BigInt("102622041139782547092868105015064481110"),
+            f19: BigInt("104299157303051087295682914303478483306"),
+            f20: BigInt("158522979922495645693730464534088665412"),
+            f21: BigInt("98924983796497715721256344811890889549"),
+            f22: BigInt("101427733087277496859123675984657804898"),
+            f23: BigInt("143984183823458846691502225907317097801"),
+            f24: BigInt("93390031317051766014001518666381742669"),
+            f25: BigInt("98629675955125557859743065894237921866"),
+            f26: BigInt("113240126192282391638214221524258743400"),
+            f27: BigInt("159768625394236054695255475032837014085"),
+            f28: BigInt("86742720980665506277118054953326044008"),
+            f29: BigInt("108115391468721540878665441086164520295"),
+            f30: BigInt("161180725254808016287400476848039479121"),
+            f31: BigInt("102782965339377966543461638708445529969")
+        },
+        c3: {
+            f0:  BigInt("65186477255722150645895260884007205172"),
+            f1:  BigInt("95955375597486038097411248630373888845"),
+            f2:  BigInt("64142718715832869222876896815094528590"),
+            f3:  BigInt("154701631518575832068258311842974690360"),
+            f4:  BigInt("13636071022748039100646409152511374413"),
+            f5:  BigInt("62880872918524779055374708655558510699"),
+            f6:  BigInt("135920910130704636776368572544915304268"),
+            f7:  BigInt("114745915103299834210735566409685690178"),
+            f8:  BigInt("64241134584342999048883163135648936290"),
+            f9:  BigInt("104215937939205518567735692021288422666"),
+            f10: BigInt("88317570300186438405024399293257238614"),
+            f11: BigInt("93307125394424701450372810658670209123"),
+            f12: BigInt("114575238943095676064017428219876827511"),
+            f13: BigInt("116111120132352419567993148310204713593"),
+            f14: BigInt("117441524818622099760901754959636821367"),
+            f15: BigInt("68187619931250936603820279875504255050"),
+            f16: BigInt("112119420538929811619985651393511567449"),
+            f17: BigInt("130826943670921416441481147031776556849"),
+            f18: BigInt("96323786638642194763670387986082975341"),
+            f19: BigInt("134804770002339682680223995223689419089"),
+            f20: BigInt("146465758176419611085006743153942031154"),
+            f21: BigInt("133365143821404798217289280003139401779"),
+            f22: BigInt("102689443625309923968284726542507276100"),
+            f23: BigInt("86739474128495494447617234889689950018"),
+            f24: BigInt("104222184131274927152731612939844929869"),
+            f25: BigInt("137456998421721680379205294732134601025"),
+            f26: BigInt("64224844411967783155867057150600104055"),
+            f27: BigInt("134799398175716214108515055330890170690"),
+            f28: BigInt("113437433154158796875572185150411009136"),
+            f29: BigInt("108006554474245330756093401936507257671"),
+            f30: BigInt("97466053372950493505749346567525463881"),
+            f31: BigInt("88130502953788587827120474680311690338")
+        },
+        c4: {
+            f0:  BigInt("108006554474245330756093469187236906817"),
+            f1:  BigInt("110696878246818504645464998617804784457"),
+            f2:  BigInt("102705039528781360252585760469160321609"),
+            f3:  BigInt("86806224810789133026584909959423017282"),
+            f4:  BigInt("110696878246818523534947242596286941521"),
+            f5:  BigInt("86780951656464899688657902474536182345"),
+            f6:  BigInt("87979680886188639544671576628821850671"),
+            f7:  BigInt("101484765960327451850289398063378551108"),
+            f8:  BigInt("89574407365088473772938852214035345227"),
+            f9:  BigInt("138854517773181199774536703849374503233"),
+            f10: BigInt("118640199855291024473989186375201669454"),
+            f11: BigInt("142763525726051560809477925346820967244"),
+            f12: BigInt("138854517773181200992951810649146605891"),
+            f13: BigInt("86760506990978747262506496179599130958"),
+            f14: BigInt("137249325328783976645265893586968988761"),
+            f15: BigInt("157390390156787254004704353277637116787"),
+            f16: BigInt("86760506990979017396039555803609386600"),
+            f17: BigInt("86743491311953954465984939624866991193"),
+            f18: BigInt("138620583466798336526110762126452928615"),
+            f19: BigInt("92335939829628011868222450392839907446"),
+            f20: BigInt("86743491312036284460484192791935342913"),
+            f21: BigInt("97503207702332337068953081752943016039"),
+            f22: BigInt("158517278840032780050120860823926109800"),
+            f23: BigInt("87979926020288696764603871670514041157"),
+            f24: BigInt("97503207722774205556521453575423223873"),
+            f25: BigInt("86743911618670317062559762224031233640"),
+            f26: BigInt("86738642548474510294889094403944038737"),
+            f27: BigInt("138854517773181200974505066575436005697"),
+            f28: BigInt("118640220137681285310965012786450612558"),
+            f29: BigInt("86742719386791104683389083352044620619"),
+            f30: BigInt("139918267955006881257473961323848091473"),
+            f31: BigInt("108006494894644272685888618632395835249")
+        },
+        c5: {
+            f0:  BigInt("108006557258706241659985473828752488261"),
+            f1:  BigInt("162219309811959873965566435168599818800"),
+            f2:  BigInt("88088664547138486403138251486309865033"),
+            f3:  BigInt("102725806974121843144999063019446169447"),
+            f4:  BigInt("86806937632782324422938379499129493828"),
+            f5:  BigInt("13688704824881688243656347381294837841"),
+            f6:  BigInt("88110504248763473322684372998759804747"),
+            f7:  BigInt("104222184131274927152875668712215105857"),
+            f8:  BigInt("97497852546092203021197512121252860225"),
+            f9:  BigInt("158516955747905274132243860013130084171"),
+            f10: BigInt("65710107205043861615009419442378592778"),
+            f11: BigInt("57381683643263070943760097813283366486"),
+            f12: BigInt("158792999119839800417812092874115477356"),
+            f13: BigInt("154540809751375081968391996340146094435"),
+            f14: BigInt("65709884645429528757623790994739825207"),
+            f15: BigInt("107923620416901828727515912521295157338"),
+            f16: BigInt("112082324792868426501112314569398304061"),
+            f17: BigInt("60049826683650511435468148609997424201"),
+            f18: BigInt("89438738966686724883412554844232363309"),
+            f19: BigInt("89610855015799159161027698144418550849"),
+            f20: BigInt("114699162797997789152528017540738859331"),
+            f21: BigInt("108083851142342728447724711101837039734"),
+            f22: BigInt("150552011994292091726399966030093318778"),
+            f23: BigInt("141269262701876803909696170823040979783"),
+            f24: BigInt("94896799011537695288700043592619678017"),
+            f25: BigInt("92096747467091594640638106456726008662"),
+            f26: BigInt("88083651531558829604485206877370401358"),
+            f27: BigInt("130883731882376301047410279815022004806"),
+            f28: BigInt("86769958671868729270408334388083837491"),
+            f29: BigInt("108203679377559740226141076498688595249"),
+            f30: BigInt("88177175460604046955270861431578851378"),
+            f31: BigInt("90851266320487920100059542617821374273")
+        },
+        c6: {
+            f0:  BigInt("159759008927450930895043264902981570902"),
+            f1:  BigInt("129279517043707156047215789284238902351"),
+            f2:  BigInt("158620862073024130190831503449898645318"),
+            f3:  BigInt("104215929710924029601125229471218160717"),
+            f4:  BigInt("104044734205162650713385738948535468630"),
+            f5:  BigInt("120001209215512106194721759071299655496"),
+            f6:  BigInt("104215935958237839393891345208494089078"),
+            f7:  BigInt("92095981341868982284900356019716178518"),
+            f8:  BigInt("109398880097441863495721048532905588302"),
+            f9:  BigInt("116106662986769913101104408789661349713"),
+            f10: BigInt("86801173540104712403034770013439995957"),
+            f11: BigInt("89112638057023885506763469594474661739"),
+            f12: BigInt("102788461475641410220265117666830336378"),
+            f13: BigInt("86748685607233416831091837439976106822"),
+            f14: BigInt("108022558241189440386610708875183741265"),
+            f15: BigInt("13704161855232671143588185872496148839"),
+            f16: BigInt("161195874471758793676891537928747303730"),
+            f17: BigInt("150599088656934099763856930657047889732"),
+            f18: BigInt("73535608758798006241976222915708545078"),
+            f19: BigInt("143943050701570335378132903252039005040"),
+            f20: BigInt("89694114229899133133255463084456437002"),
+            f21: BigInt("86754341454156000972054825609277502786"),
+            f22: BigInt("105540759417530183110379658531565627223"),
+            f23: BigInt("88084441758818902388359546794544886852"),
+            f24: BigInt("92118044732493612046283371190541224531"),
+            f25: BigInt("162682273000611183918734615451771496293"),
+            f26: BigInt("117436336575384934912012979000499271279"),
+            f27: BigInt("66977614231785214538245385157039320146"),
+            f28: BigInt("119880831760573088092655120848572283222"),
+            f29: BigInt("113583243723965263140091410885173933911"),
+            f30: BigInt("132156011460486665768312586201896412208"),
+            f31: BigInt("143999619835172623008070749800586559850")
+        },
+        c7: {
+            f0:  BigInt("113557546850892497987500480138009917783"),
+            f1:  BigInt("90851712646415256230424001030585861177"),
+            f2:  BigInt("94735550443130881465728323161131340374"),
+            f3:  BigInt("97456637088816642250521927678482268749"),
+            f4:  BigInt("118837466571096140617145508706234483021"),
+            f5:  BigInt("87019371620024302753120101835410983753"),
+            f6:  BigInt("114596124764570259737022387458184139383"),
+            f7:  BigInt("98825967693551263586312253919290935129"),
+            f8:  BigInt("70996246243831739857321030152208083524"),
+            f9:  BigInt("112186945667196006601730538993560929123"),
+            f10: BigInt("101474445779455900762678426287325212758"),
+            f11: BigInt("59868061127198879706198332094851208557"),
+            f12: BigInt("89438738966686724883409745583029431597"),
+            f13: BigInt("92060339589503411118967633307180028993"),
+            f14: BigInt("60175237186621466715741577900955945287"),
+            f15: BigInt("110877630802947321414011372181922852141"),
+            f16: BigInt("150764531549494692607384348744819884391"),
+            f17: BigInt("142862302252069136392219667440557706852"),
+            f18: BigInt("64355807530296359853534341997890978414"),
+            f19: BigInt("65471119321367797089588412003607068997"),
+            f20: BigInt("64246387574026164403101086311830865237"),
+            f21: BigInt("141269260001006398338569386964680268132"),
+            f22: BigInt("94896799011537695915889342098744432961"),
+            f23: BigInt("129185774275670464001075274863943971670"),
+            f24: BigInt("90762998406546186383435405248674740567"),
+            f25: BigInt("118930984969024072093108598220917077057"),
+            f26: BigInt("108017770325492730981611187253277377876"),
+            f27: BigInt("112118589678735990963422783488359154992"),
+            f28: BigInt("161279318043548877213510858521089305665"),
+            f29: BigInt("70871368959432823637082908525966218317"),
+            f30: BigInt("158756227011247626083245993945905845325"),
+            f31: BigInt("158797338674303854549574448697011684449")
+        },
+        c8: {
+            f0:  BigInt("98727820166395675601586984939924443986"),
+            f1:  BigInt("104215935958237839393891345209043935862"),
+            f2:  BigInt("104039541908304115885757206253753418326"),
+            f3:  BigInt("109398880097441683637158877778945139574"),
+            f4:  BigInt("116106662986769913101104408789661349713"),
+            f5:  BigInt("86801173540104712403034770013439995957"),
+            f6:  BigInt("162516138746130743691299096200659158891"),
+            f7:  BigInt("102788461475551926540425400124472183361"),
+            f8:  BigInt("86748685607233416831091837439976106822"),
+            f9:  BigInt("108022558241189440386610708875183741265"),
+            f10: BigInt("63025708737421792529703144196892082535"),
+            f11: BigInt("105555809032855000796590667417515413609"),
+            f12: BigInt("146663691761534360945899085974140505171"),
+            f13: BigInt("105633652862152691835238844775366154603"),
+            f14: BigInt("93670847302172755752448385955231001908"),
+            f15: BigInt("89694109789057736809817704173929706064"),
+            f16: BigInt("86754341454156000972054825609277502786"),
+            f17: BigInt("105540759417530183110379658531565627223"),
+            f18: BigInt("88084441758818902388359546794544886852"),
+            f19: BigInt("92116747274820332361528321082854425171"),
+            f20: BigInt("162682273000611183918734615451771496293"),
+            f21: BigInt("117436336575384934912012979000499271279"),
+            f22: BigInt("66977614231785214538245385157039320146"),
+            f23: BigInt("119683420371024380976422129784708168022"),
+            f24: BigInt("113583243723965263140091410885173933911"),
+            f25: BigInt("132156011460486665768312586201896412208"),
+            f26: BigInt("97476639982700567456437502690774499690"),
+            f27: BigInt("13740505317254161052441172975754761581"),
+            f28: BigInt("90851712646461219302555181998417736277"),
+            f29: BigInt("94735550443130881465728323161131340374"),
+            f30: BigInt("97456637088816642250521927678482268749"),
+            f31: BigInt("97497852546097038724542098561488732493")
+        },
+        c9: {
+            f0:  BigInt("86822084621809582954906366922151906058"),
+            f1:  BigInt("76197835072533948841173536026585944695"),
+            f2:  BigInt("116241497756758996026187606808727873859"),
+            f3:  BigInt("158616706222254633509389386986185254471"),
+            f4:  BigInt("57755488519769657131052576049454975591"),
+            f5:  BigInt("86827057936313741718222112903189065560"),
+            f6:  BigInt("150708207702842747326009749498571872886"),
+            f7:  BigInt("112082324792868426501112314569398304073"),
+            f8:  BigInt("806263065586343880936259143241"),
+            f9:  BigInt("0"),
+            f10: BigInt("0"),
+            f11: BigInt("0"),
+            f12: BigInt("0"),
+            f13: BigInt("0"),
+            f14: BigInt("0"),
+            f15: BigInt("0"),
+            f16: BigInt("0"),
+            f17: BigInt("0"),
+            f18: BigInt("0"),
+            f19: BigInt("0"),
+            f20: BigInt("0"),
+            f21: BigInt("0"),
+            f22: BigInt("0"),
+            f23: BigInt("0"),
+            f24: BigInt("0"),
+            f25: BigInt("0"),
+            f26: BigInt("0"),
+            f27: BigInt("0"),
+            f28: BigInt("0"),
+            f29: BigInt("0"),
+            f30: BigInt("0"),
+            f31: BigInt("0")
+        }
+        };
+
+        const signer = "aleo1czu58vskrq0m2gqlpggucvcj2w2zht4unh4jg23gq5a4cp3fespsawtj6t";
+        const signature = "sign1c0ts7e6mem08l62fgxpqexfjk742kxus6ffe7d8apd7vxdeduyq828yzl43wc35g6nl4h2l58lk72pesp57msqmxwe3l3xhw2hnvwqhy7pztupfz6yycl4k9gqaf2450q2e4p2knyst63uuqagnu2w2xpcm9hkflwsrm4gq2a8eduhv8fs434lhehu7gwg80apn6l35wjkw3z8jpgca";
+
+        oracle.connect(owner);
 
         // setting keys
         const setKeysTx = await oracle.set_key(signer, true);
         await setKeysTx.wait();
 
         const setTx = await oracle.set_data_sgx(ReportData, Report, signature, signer);
-        expect(await setTx.wait()).toStrictEqual([]);
+        await setTx.wait();
         }, TIMEOUT);
+
 
         test('set data_sgx by owner: Happy Flow', async () => {
         const ReportDataChunk1 = {
@@ -3411,7 +3969,7 @@ describe('deploy test', () => {
         const signer = "aleo1czu58vskrq0m2gqlpggucvcj2w2zht4unh4jg23gq5a4cp3fespsawtj6t";
         const signature = "sign1c0ts7e6mem08l62fgxpqexfjk742kxus6ffe7d8apd7vxdeduyq828yzl43wc35g6nl4h2l58lk72pesp57msqmxwe3l3xhw2hnvwqhy7pztupfz6yycl4k9gqaf2450q2e4p2knyst63uuqagnu2w2xpcm9hkflwsrm4gq2a8eduhv8fs434lhehu7gwg80apn6l35wjkw3z8jpgca";
 
-        oracle.connect(admin);
+        oracle.connect(owner);
 
         // setting keys
         const setKeysTx = await oracle.set_key(signer, true);
@@ -3430,6 +3988,14 @@ describe('deploy test', () => {
         await setTx.wait();
         expect(await oracle.allowed_keys(aleoUser3)).toBeTruthy;
         }, TIMEOUT);
+
+        test("pause for testing", async () => {
+            oracle.connect(owner);
+            const tx = await oracle.pause();
+            await tx.wait();
+        },
+            TIMEOUT
+        );
     });
 
     describe("Set nitro data", () => {
@@ -3893,12 +4459,12 @@ describe('deploy test', () => {
         const pcr_2_position = {block_index: 12, shift_a: 112, shift_b: 16, mask_a: BigInt("340277174624079928635746076935438991360"), mask_b: BigInt("5192296858534827628530496329220095")}
 
 
-        oracle.connect(admin);
+        oracle.connect(owner);
         const tx = await oracle.set_data_nitro(ReportData, Report, signature, signer, data_position, pcr_0_position, pcr_1_position, pcr_2_position);
         await tx.wait();
         }, TIMEOUT)
 
-        test.failing("set data_sgx by owner: Happy Flow", async() => {
+        test.failing("when wrong signaure is used", async() => {
             const ReportDataChunk1 = {
                     f0:  BigInt("83078017405291376027697408591265804"),
                     f1:  BigInt("4194320"),
@@ -4358,12 +4924,12 @@ describe('deploy test', () => {
         const pcr_2_position = {block_index: 12, shift_a: 112, shift_b: 16, mask_a: BigInt("340277174624079928635746076935438991360"), mask_b: BigInt("5192296858534827628530496329220095")}
 
 
-        oracle.connect(admin);
+        oracle.connect(owner);
         const tx = await oracle.set_data_nitro(ReportData, Report, wrong_signature, signer, data_position, pcr_0_position, pcr_1_position, pcr_2_position);
         await tx.wait();
         }, TIMEOUT)
 
-        test("failed when signer is not register", async() => {
+        test.failing("failed when signer is not register", async() => {
             const ReportDataChunk1 = {
                     f0:  BigInt("83078017405291376027697408591265804"),
                     f1:  BigInt("4194320"),
@@ -4823,12 +5389,12 @@ describe('deploy test', () => {
         const pcr_2_position = {block_index: 12, shift_a: 112, shift_b: 16, mask_a: BigInt("340277174624079928635746076935438991360"), mask_b: BigInt("5192296858534827628530496329220095")}
 
 
-        oracle.connect(admin);
+        oracle.connect(owner);
         const tx = await oracle.set_data_nitro(ReportData, Report, signature, signer, data_position, pcr_0_position, pcr_1_position, pcr_2_position);
-        expect(await tx.wait()).toStrictEqual([]);
+        await tx.wait();
         }, TIMEOUT)
 
-        test("failed when pcr values is not set", async() => {
+        test.failing("failed when pcr values is not set", async() => {
             const ReportDataChunk1 = {
                     f0:  BigInt("83078017405291376027697408591265804"),
                     f1:  BigInt("4194320"),
@@ -5288,7 +5854,7 @@ describe('deploy test', () => {
         const pcr_2_position = {block_index: 12, shift_a: 112, shift_b: 16, mask_a: BigInt("340277174624079928635746076935438991360"), mask_b: BigInt("5192296858534827628530496329220095")}
 
 
-        oracle.connect(admin);
+        oracle.connect(owner);
         // setting keys
         const setKeysTx = await oracle.set_key(signer, true);
         await setKeysTx.wait();
@@ -5297,7 +5863,7 @@ describe('deploy test', () => {
         expect(await tx.wait()).toStrictEqual([]);
         }, TIMEOUT)
 
-        test("set data_sgx by owner: Happy Flow", async() => {
+        test.failing("failed when paused", async() => {
             const ReportDataChunk1 = {
                     f0:  BigInt("83078017405291376027697408591265804"),
                     f1:  BigInt("4194320"),
@@ -5757,7 +6323,481 @@ describe('deploy test', () => {
         const pcr_2_position = {block_index: 12, shift_a: 112, shift_b: 16, mask_a: BigInt("340277174624079928635746076935438991360"), mask_b: BigInt("5192296858534827628530496329220095")}
 
 
-        oracle.connect(admin);
+        oracle.connect(owner);
+        const tx = await oracle.set_data_nitro(ReportData, Report, signature, signer, data_position, pcr_0_position, pcr_1_position, pcr_2_position);
+        await tx.wait();
+        }, TIMEOUT)
+
+        test("unpause for testing", async () => {
+            expect(await oracle.status(STATUS_INDEX)).toBe(UNPAUSED_VALUE);
+            oracle.connect(owner);
+            const tx = await oracle.unpause();
+            await tx.wait();
+        },
+            TIMEOUT
+        );
+
+        test("set data_nitro by owner: Happy Flow", async() => {
+            const ReportDataChunk1 = {
+                    f0:  BigInt("83078017405291376027697408591265804"),
+                    f1:  BigInt("4194320"),
+                    f2:  BigInt("84922721135"),
+                    f3:  BigInt("1745045964"),
+                    f4:  BigInt("200"),
+                    f5:  BigInt("516397922843010045795542620080534128"),
+                    f6:  BigInt("134768203673174239740683604430737204599"),
+                    f7:  BigInt("0"),
+                    f8:  BigInt("5522759"),
+                    f9:  BigInt("110680464442257309698"),
+                    f10: BigInt("0"),
+                    f11: BigInt("55340232221128654848"),
+                    f12: BigInt("0"),
+                    f13: BigInt("0"),
+                    f14: BigInt("0"),
+                    f15: BigInt("0"),
+                    f16: BigInt("0"),
+                    f17: BigInt("0"),
+                    f18: BigInt("0"),
+                    f19: BigInt("0"),
+                    f20: BigInt("0"),
+                    f21: BigInt("0"),
+                    f22: BigInt("0"),
+                    f23: BigInt("0"),
+                    f24: BigInt("0"),
+                    f25: BigInt("0"),
+                    f26: BigInt("0"),
+                    f27: BigInt("0"),
+                    f28: BigInt("0"),
+                    f29: BigInt("0"),
+                    f30: BigInt("0"),
+                    f31: BigInt("0")
+            };
+
+            const ReportDataChunk2 = {
+                f0: BigInt("0"), f1: BigInt("0"), f2: BigInt("0"), f3: BigInt("0"), f4: BigInt("0"),
+                f5: BigInt("0"), f6: BigInt("0"), f7: BigInt("0"), f8: BigInt("0"),
+                f9: BigInt("0"), f10: BigInt("0"), f11: BigInt("0"), f12: BigInt("0"),
+                f13: BigInt("0"), f14: BigInt("0"), f15: BigInt("0"), f16: BigInt("0"),
+                f17: BigInt("0"), f18: BigInt("0"), f19: BigInt("0"), f20: BigInt("0"),
+                f21: BigInt("0"), f22: BigInt("0"), f23: BigInt("0"), f24: BigInt("0"),
+                f25: BigInt("0"), f26: BigInt("0"), f27: BigInt("0"), f28: BigInt("0"),
+                f29: BigInt("0"), f30: BigInt("0"), f31: BigInt("0")
+            }
+
+            const ReportDataChunk3 = {
+                f0: BigInt("0"), f1: BigInt("0"), f2: BigInt("0"), f3: BigInt("0"), f4: BigInt("0"),
+                f5: BigInt("0"), f6: BigInt("0"), f7: BigInt("0"), f8: BigInt("0"),
+                f9: BigInt("0"), f10: BigInt("0"), f11: BigInt("0"), f12: BigInt("0"),
+                f13: BigInt("0"), f14: BigInt("0"), f15: BigInt("0"), f16: BigInt("0"),
+                f17: BigInt("0"), f18: BigInt("0"), f19: BigInt("0"), f20: BigInt("0"),
+                f21: BigInt("0"), f22: BigInt("0"), f23: BigInt("0"), f24: BigInt("0"),
+                f25: BigInt("0"), f26: BigInt("0"), f27: BigInt("0"), f28: BigInt("0"),
+                f29: BigInt("0"), f30: BigInt("0"), f31: BigInt("0")
+            }
+
+            const ReportDataChunk4 = {
+                f0: BigInt("0"), f1: BigInt("0"), f2: BigInt("0"), f3: BigInt("0"), f4: BigInt("0"),
+                f5: BigInt("0"), f6: BigInt("0"), f7: BigInt("0"), f8: BigInt("0"),
+                f9: BigInt("0"), f10: BigInt("0"), f11: BigInt("0"), f12: BigInt("0"),
+                f13: BigInt("0"), f14: BigInt("0"), f15: BigInt("0"), f16: BigInt("0"),
+                f17: BigInt("0"), f18: BigInt("0"), f19: BigInt("0"), f20: BigInt("0"),
+                f21: BigInt("0"), f22: BigInt("0"), f23: BigInt("0"), f24: BigInt("0"),
+                f25: BigInt("0"), f26: BigInt("0"), f27: BigInt("0"), f28: BigInt("0"),
+                f29: BigInt("0"), f30: BigInt("0"), f31: BigInt("0")
+            }
+
+            const ReportDataChunk5 = {
+                f0: BigInt("0"), f1: BigInt("0"), f2: BigInt("0"), f3: BigInt("0"), f4: BigInt("0"),
+                f5: BigInt("0"), f6: BigInt("0"), f7: BigInt("0"), f8: BigInt("0"),
+                f9: BigInt("0"), f10: BigInt("0"), f11: BigInt("0"), f12: BigInt("0"),
+                f13: BigInt("0"), f14: BigInt("0"), f15: BigInt("0"), f16: BigInt("0"),
+                f17: BigInt("0"), f18: BigInt("0"), f19: BigInt("0"), f20: BigInt("0"),
+                f21: BigInt("0"), f22: BigInt("0"), f23: BigInt("0"), f24: BigInt("0"),
+                f25: BigInt("0"), f26: BigInt("0"), f27: BigInt("0"), f28: BigInt("0"),
+                f29: BigInt("0"), f30: BigInt("0"), f31: BigInt("0")
+            }
+
+            const ReportDataChunk6 = {
+                f0: BigInt("0"), f1: BigInt("0"), f2: BigInt("0"), f3: BigInt("0"), f4: BigInt("0"),
+                f5: BigInt("0"), f6: BigInt("0"), f7: BigInt("0"), f8: BigInt("0"),
+                f9: BigInt("0"), f10: BigInt("0"), f11: BigInt("0"), f12: BigInt("0"),
+                f13: BigInt("0"), f14: BigInt("0"), f15: BigInt("0"), f16: BigInt("0"),
+                f17: BigInt("0"), f18: BigInt("0"), f19: BigInt("0"), f20: BigInt("0"),
+                f21: BigInt("0"), f22: BigInt("0"), f23: BigInt("0"), f24: BigInt("0"),
+                f25: BigInt("0"), f26: BigInt("0"), f27: BigInt("0"), f28: BigInt("0"),
+                f29: BigInt("0"), f30: BigInt("0"), f31: BigInt("0")
+            }
+
+            const ReportDataChunk7 = {
+                f0: BigInt("0"), f1: BigInt("0"), f2: BigInt("0"), f3: BigInt("0"), f4: BigInt("0"),
+                f5: BigInt("0"), f6: BigInt("0"), f7: BigInt("0"), f8: BigInt("0"),
+                f9: BigInt("0"), f10: BigInt("0"), f11: BigInt("0"), f12: BigInt("0"),
+                f13: BigInt("0"), f14: BigInt("0"), f15: BigInt("0"), f16: BigInt("0"),
+                f17: BigInt("0"), f18: BigInt("0"), f19: BigInt("0"), f20: BigInt("0"),
+                f21: BigInt("0"), f22: BigInt("0"), f23: BigInt("0"), f24: BigInt("0"),
+                f25: BigInt("0"), f26: BigInt("0"), f27: BigInt("0"), f28: BigInt("0"),
+                f29: BigInt("0"), f30: BigInt("0"), f31: BigInt("0")
+            }
+
+            const ReportDataChunk8 = {
+                f0: BigInt("0"), f1: BigInt("0"), f2: BigInt("0"), f3: BigInt("0"), f4: BigInt("0"),
+                f5: BigInt("0"), f6: BigInt("0"), f7: BigInt("0"), f8: BigInt("0"),
+                f9: BigInt("0"), f10: BigInt("0"), f11: BigInt("0"), f12: BigInt("0"),
+                f13: BigInt("0"), f14: BigInt("0"), f15: BigInt("0"), f16: BigInt("0"),
+                f17: BigInt("0"), f18: BigInt("0"), f19: BigInt("0"), f20: BigInt("0"),
+                f21: BigInt("0"), f22: BigInt("0"), f23: BigInt("0"), f24: BigInt("0"),
+                f25: BigInt("0"), f26: BigInt("0"), f27: BigInt("0"), f28: BigInt("0"),
+                f29: BigInt("0"), f30: BigInt("0"), f31: BigInt("0")
+            }
+
+            const ReportData = {
+                c0: ReportDataChunk1,
+                c1: ReportDataChunk2,
+                c2: ReportDataChunk3,
+                c3: ReportDataChunk4,
+                c4: ReportDataChunk5,
+                c5: ReportDataChunk6,
+                c6: ReportDataChunk7,
+                c7: ReportDataChunk8,
+            }
+
+        const Report = {
+            c0: {
+                f0:  BigInt("156041165208724858550160325516317508740"),
+                f1:  BigInt("68040896349700335443152153815967294828"),
+                f2:  BigInt("65383418747632044544266309114284695862"),
+                f3:  BigInt("133453577815150336448827841000165815609"),
+                f4:  BigInt("145433403805334237040584272683024607081"),
+                f5:  BigInt("133394626127677039870618113101337490277"),
+                f6:  BigInt("101224974670643579940077171341977084784"),
+                f7:  BigInt("23518000090442608791426115905368881309"),
+                f8:  BigInt("188604218334229806050876467735703621356"),
+                f9:  BigInt("272941851679105779330744574252688917435"),
+                f10: BigInt("214228591534597146723694420824838276484"),
+                f11: BigInt("308566972771111169730568573940310889569"),
+                f12: BigInt("5987698806455358490920363910007578496"),
+                f13: BigInt("206636261340599366466934819020627933397"),
+                f14: BigInt("214907878105809259975486082763759813567"),
+                f15: BigInt("116992798921533342417132759864032117635"),
+                f16: BigInt("48"),
+                f17: BigInt("0"),
+                f18: BigInt("0"),
+                f19: BigInt("114689934275231701975857911694634779648"),
+                f20: BigInt("336544912548144973691449324034492367801"),
+                f21: BigInt("178577571566502132690498513421162593988"),
+                f22: BigInt("13607581421961142"),
+                f23: BigInt("0"),
+                f24: BigInt("0"),
+                f25: BigInt("228297337001793638367232"),
+                f26: BigInt("0"),
+                f27: BigInt("0"),
+                f28: BigInt("3830194944029703872942113292288"),
+                f29: BigInt("0"),
+                f30: BigInt("0"),
+                f31: BigInt("64260028180503855944056814148438196224")
+            },
+            c1: {
+                f0:  BigInt("0"),
+                f1:  BigInt("0"),
+                f2:  BigInt("0"),
+                f3:  BigInt("3168265"),
+                f4:  BigInt("0"),
+                f5:  BigInt("0"),
+                f6:  BigInt("53154683027456"),
+                f7:  BigInt("0"),
+                f8:  BigInt("0"),
+                f9:  BigInt("891787880038139953152"),
+                f10: BigInt("0"),
+                f11: BigInt("0"),
+                f12: BigInt("14961722611948445101906198528"),
+                f13: BigInt("0"),
+                f14: BigInt("0"),
+                f15: BigInt("251016131220905758603159897987088384"),
+                f16: BigInt("0"),
+                f17: BigInt("0"),
+                f18: BigInt("18609191940988822220653298843924824064"),
+                f19: BigInt("12376"),
+                f20: BigInt("0"),
+                f21: BigInt("0"),
+                f22: BigInt("207635808256"),
+                f23: BigInt("0"),
+                f24: BigInt("0"),
+                f25: BigInt("154696116615530903167519866259721158656"),
+                f26: BigInt("1339686114168286448591755673658874213"),
+                f27: BigInt("138239711561874340567434925653156168194"),
+                f28: BigInt("63818581871520994197558765282344448003"),
+                f29: BigInt("65564856601879393085149581411146108801"),
+                f30: BigInt("146762389218449641779117774626249322515"),
+                f31: BigInt("110362513673010855677066021725243667559")
+            },
+            c2: {
+                f0:  BigInt("16002746782972337931965864452478493029"),
+                f1:  BigInt("14644001385438238062873278203680342278"),
+                f2:  BigInt("65194540546214638698862418496839549708"),
+                f3:  BigInt("73639129474273431309411696361492983145"),
+                f4:  BigInt("129174978964704168457259762063279087926"),
+                f5:  BigInt("134866694584729194185650327887075505015"),
+                f6:  BigInt("70746022467215036576722941738164826227"),
+                f7:  BigInt("66711607493685862922370081797992569401"),
+                f8:  BigInt("112995150077927076331799319934264225882"),
+                f9:  BigInt("138838799990053843979198846947103551827"),
+                f10: BigInt("15987169892396738171518823335662677609"),
+                f11: BigInt("5758318542794315194352652920891462407"),
+                f12: BigInt("113000079033902721746767398808555228170"),
+                f13: BigInt("4010177419220567237219489109487913732"),
+                f14: BigInt("129461553234305456026250149467368535564"),
+                f15: BigInt("76058776559161641306848014474887444326"),
+                f16: BigInt("156098356535284061272470540325501493553"),
+                f17: BigInt("178334770360483737106279363259220715636"),
+                f18: BigInt("5318899907487820504231327696051621448"),
+                f19: BigInt("290480226856757415007595013773578662241"),
+                f20: BigInt("63232167729845628208141973862480759241"),
+                f21: BigInt("93767625867404219116330827943545153011"),
+                f22: BigInt("209452527268137293020651329039394578359"),
+                f23: BigInt("111106044171299256676935927299355688071"),
+                f24: BigInt("46493663851487872027516241381298304640"),
+                f25: BigInt("2684397273013657863757327789294886307"),
+                f26: BigInt("64799986648361905643634998290972409904"),
+                f27: BigInt("133172037989134094038039822806920201738"),
+                f28: BigInt("121374343845743677093859759741877956610"),
+                f29: BigInt("138716491410640707570136950319606694625"),
+                f30: BigInt("200841160542812602871267285410740712420"),
+                f31: BigInt("171351097801939731261321030578091480885")
+            },
+            c3: {
+                f0:  BigInt("145017584305563434884368144402544413022"),
+                f1:  BigInt("327186184080434689539241894302154317309"),
+                f2:  BigInt("3123255725637322634278845492236517607"),
+                f3:  BigInt("22607301166731364455086072920736411669"),
+                f4:  BigInt("330852602242659274733495601767965128960"),
+                f5:  BigInt("65512183258412965614495773021421842518"),
+                f6:  BigInt("17529502338527620353421409159257600011"),
+                f7:  BigInt("63866253947647620456944689031733904134"),
+                f8:  BigInt("8106151106259747462869428897998636554"),
+                f9:  BigInt("60393926179409375322764492154555618563"),
+                f10: BigInt("64058526327322792783629446730232327781"),
+                f11: BigInt("66711628408640354441111464544948009010"),
+                f12: BigInt("4019024116608108232097656436977578296"),
+                f13: BigInt("13314773389656949022760918323667797077"),
+                f14: BigInt("5758318541865845998438538392717297164"),
+                f15: BigInt("15966400704962650807828616660104973323"),
+                f16: BigInt("129497900356820153087834974632772329746"),
+                f17: BigInt("1340866159934401454431869852013782390"),
+                f18: BigInt("221873741020909811149845003409648452870"),
+                f19: BigInt("146815158885699195332881951041273446664"),
+                f20: BigInt("327912454013059788258521475247874460553"),
+                f21: BigInt("205812645554970254572197845772204565467"),
+                f22: BigInt("148974448045417710670601724688567757375"),
+                f23: BigInt("135628797648290881991277232872950863860"),
+                f24: BigInt("64136229632083227738759631427974301508"),
+                f25: BigInt("338958351756967522306543434400595641871"),
+                f26: BigInt("288513649036658010385676740803562970416"),
+                f27: BigInt("64583327227545613344385621445459789573"),
+                f28: BigInt("64498732018518871808005444220970272270"),
+                f29: BigInt("135830494139160250812376112114568791562"),
+                f30: BigInt("29888863043455100860638646847087325442"),
+                f31: BigInt("76085573222238351521988917808999027352")
+            },
+            c4: {
+                f0:  BigInt("260136383435294677401876483411374609792"),
+                f1:  BigInt("294616936275157485281032705027257642454"),
+                f2:  BigInt("110876895851898761764345602427478188107"),
+                f3:  BigInt("316936725587723525407275344169692593945"),
+                f4:  BigInt("3334443272195735489253710427527979917"),
+                f5:  BigInt("164933561184863073682682199788426076229"),
+                f6:  BigInt("274197533678460074088988273351489008876"),
+                f7:  BigInt("25286573566032590842024198988464587837"),
+                f8:  BigInt("145223473484656253281983289563645433090"),
+                f9:  BigInt("86415640878360880711052488254858164833"),
+                f10: BigInt("153481071664986916693494192345076290391"),
+                f11: BigInt("64402115838851692070471510411134463534"),
+                f12: BigInt("119901537075177869473532287261365573406"),
+                f13: BigInt("64271309176875880174379926884751379735"),
+                f14: BigInt("20194532657874829472795971456592458085"),
+                f15: BigInt("65705585491353666819468972964140420400"),
+                f16: BigInt("64089520565907235456728912145685295116"),
+                f17: BigInt("130545830742307986998775763883438310965"),
+                f18: BigInt("154800206716266194624070408214142070838"),
+                f19: BigInt("146740423057232991414089241716801547624"),
+                f20: BigInt("274197533678150617405868416497449266275"),
+                f21: BigInt("271697398876523658225532643347317981757"),
+                f22: BigInt("218622317326187948545781106348480422270"),
+                f23: BigInt("184842966480120668816652324045687271219"),
+                f24: BigInt("185933477345495648412847156733040143660"),
+                f25: BigInt("72926906349189302332604372702446503388"),
+                f26: BigInt("56951909646111636610042279719571801122"),
+                f27: BigInt("172317725311888964887375696880831170855"),
+                f28: BigInt("10659765247723153101180176751122264277"),
+                f29: BigInt("5499237298396557932855592969759163952"),
+                f30: BigInt("200399757940278266201561108231889498136"),
+                f31: BigInt("18761492794279328510426689943010898682")
+            },
+            c5: {
+                f0:  BigInt("159521184266582450009795739890488836"),
+                f1:  BigInt("1407707373871033484472189226088151524"),
+                f2:  BigInt("5478468110962782254072253277849059073"),
+                f3:  BigInt("77679122985958984366465417115242541157"),
+                f4:  BigInt("144072900014928234538416584008688283439"),
+                f5:  BigInt("162671686763114686287041270321680578145"),
+                f6:  BigInt("130768958247493755739320230739915665007"),
+                f7:  BigInt("133432662924961371238444746731169397044"),
+                f8:  BigInt("135867934942466315747673880865209137453"),
+                f9:  BigInt("5637826013838145338925815397817922616"),
+                f10: BigInt("158806068902134579657443934247510541059"),
+                f11: BigInt("174312066811532532535107117668282783289"),
+                f12: BigInt("215134481260847409816311012877499352667"),
+                f13: BigInt("111582100125826148052759176055695279379"),
+                f14: BigInt("4449070128531559597772656804725790731"),
+                f15: BigInt("246448818806681578313730483662102625567"),
+                f16: BigInt("63948396024180245826287196222857119243"),
+                f17: BigInt("257870576142313454907373927037331309442"),
+                f18: BigInt("64864191142494325913889311718335293953"),
+                f19: BigInt("63861060918093759370068853629001401866"),
+                f20: BigInt("4019105247484510777908407097798886921"),
+                f21: BigInt("8028265464992042726666779903847433301"),
+                f22: BigInt("113000082440765693170569724293105865987"),
+                f23: BigInt("69396025378694792103825352779153277700"),
+                f24: BigInt("61405023633236169111162167317896782946"),
+                f25: BigInt("157354754675888901725648588482739926881"),
+                f26: BigInt("66711749470554273779676082083839636325"),
+                f27: BigInt("66721992164469502724908549094887799090"),
+                f28: BigInt("69182224533569386372914916560666122809"),
+                f29: BigInt("129226963570560729222643347826709772389"),
+                f30: BigInt("60357620747309951255689869666020194862"),
+                f31: BigInt("144072900014928234538416585108199910962")
+            },
+            c6: {
+                f0:  BigInt("86415640878360880711052488254941394529"),
+                f1:  BigInt("129502394784436278161052032072051413847"),
+                f2:  BigInt("110767310955139920092937077096759324538"),
+                f3:  BigInt("63887019562241332022852100166849137457"),
+                f4:  BigInt("64329565507110030959314229704198915598"),
+                f5:  BigInt("171693782108900333267627286602705809526"),
+                f6:  BigInt("239481043998862209249006741596024209412"),
+                f7:  BigInt("109664773408019505303559133789893590083"),
+                f8:  BigInt("30400734893396779797619123509182489440"),
+                f9:  BigInt("257413529950028072842761693375766050814"),
+                f10: BigInt("96373766794108525975701466937424318317"),
+                f11: BigInt("44159109640586504816198594027301157951"),
+                f12: BigInt("8069821373968674814674140062441924125"),
+                f13: BigInt("1344784683496044604647482971320571139"),
+                f14: BigInt("293027689007676684143886182173969952769"),
+                f15: BigInt("296278511797529635492764165074592601201"),
+                f16: BigInt("323157139064428621551727010651235691884"),
+                f17: BigInt("46711401945974810738876407196439308536"),
+                f18: BigInt("1339673755189667405418948083040792756"),
+                f19: BigInt("213295345809024821469235216372381855878"),
+                f20: BigInt("60378347923928771813958258402331435125"),
+                f21: BigInt("146451074830305256972765103308413956193"),
+                f22: BigInt("68388684057243771120245843786317591657"),
+                f23: BigInt("162671686763113147866056329763342016814"),
+                f24: BigInt("133188568583570985414215442029332229743"),
+                f25: BigInt("130795118097697711773915701852507420210"),
+                f26: BigInt("134777609868654236608771009139646423341"),
+                f27: BigInt("5637826013838145338925815397817935160"),
+                f28: BigInt("135075223500206767770880974021583897347"),
+                f29: BigInt("107687967222074739896401945341176292204"),
+                f30: BigInt("63145817365383048800076918487809154298"),
+                f31: BigInt("65347834196487247793676319902040851430")
+            },
+            c7: {
+                f0:  BigInt("33378710743597480061008634951478493305"),
+                f1:  BigInt("79702535383929337567885095160225182933"),
+                f2:  BigInt("173052865522070025277817004298892725324"),
+                f3:  BigInt("160769089295226673292544024573415309570"),
+                f4:  BigInt("216583123683934642207411702048181695752"),
+                f5:  BigInt("171719702791689776488175324703048598103"),
+                f6:  BigInt("69650613893476138110907406551164465546"),
+                f7:  BigInt("146793902616193230151705729761080915762"),
+                f8:  BigInt("158682721259985864533589211118920690785"),
+                f9:  BigInt("153388042540986923798725508525548514931"),
+                f10: BigInt("20194532835809395764468070159347616817"),
+                f11: BigInt("65705585491353666819468972964140420400"),
+                f12: BigInt("12212509225749542255124485129131077643"),
+                f13: BigInt("113000079350820206675236471235086189318"),
+                f14: BigInt("66529368535650399963705326765236553476"),
+                f15: BigInt("70708964141015401626799508084556574773"),
+                f16: BigInt("14878841119672893209578655919826351152"),
+                f17: BigInt("8064612097566158121999867100703099184"),
+                f18: BigInt("146793785441823655995092978273771345155"),
+                f19: BigInt("154794729368112024508226481531827261489"),
+                f20: BigInt("129502394784436278161052032072051418476"),
+                f21: BigInt("115980396730468778132908763026635517818"),
+                f22: BigInt("66711551081023980532377797364178104659"),
+                f23: BigInt("61660496884298853984710722076145824098"),
+                f24: BigInt("146456267127165000726213248433917882465"),
+                f25: BigInt("64416617525283835287760861988966790249"),
+                f26: BigInt("23389026638681857103288661443020304"),
+                f27: BigInt("223809778191447076005277609050557776674"),
+                f28: BigInt("212702743061416732230267697194115255215"),
+                f29: BigInt("258991805064419513130289888946765826746"),
+                f30: BigInt("24215101980949713639276893244547803349"),
+                f31: BigInt("290670895692896952227881779802464542429")
+            },
+            c8: {
+                f0:  BigInt("46342237435161555498941361140998496394"),
+                f1:  BigInt("25407632773190608766613139897410197092"),
+                f2:  BigInt("8049033686703065187836868193565999361"),
+                f3:  BigInt("8126918456802032688416278496312907011"),
+                f4:  BigInt("25811834176628298452574579807468999939"),
+                f5:  BigInt("4019470395303830395470582013647165533"),
+                f6:  BigInt("277665395901432410273225798478104567125"),
+                f7:  BigInt("8028278770900917142525197133188190257"),
+                f8:  BigInt("65144608713625459438841599011328502280"),
+                f9:  BigInt("276251956322046994522972807403716645888"),
+                f10: BigInt("21040151710115691230916120867824110646"),
+                f11: BigInt("74104307327355025535960346286680720361"),
+                f12: BigInt("240148007424826439547918325714739266179"),
+                f13: BigInt("234183086207789032682733889952765744523"),
+                f14: BigInt("278536868765306780004714935101292482370"),
+                f15: BigInt("140848706791452403507084815780793550352"),
+                f16: BigInt("15890416735290301711259205847493210997"),
+                f17: BigInt("134768304856819632897575362076763463001"),
+                f18: BigInt("286299468068363603835989844575735062616"),
+                f19: BigInt("188762046733667093327994287457828634502"),
+                f20: BigInt("85446419742223401692470021566003447556"),
+                f21: BigInt("37277191065863831340366133589003214735"),
+                f22: BigInt("53101358147749382217271146015059686699"),
+                f23: BigInt("315948077327105683919865832920532598534"),
+                f24: BigInt("69226107859952492808125861101514386547"),
+                f25: BigInt("84787150075150737363191428410333285005"),
+                f26: BigInt("1328387363"),
+                f27: BigInt("0"),
+                f28: BigInt("0"),
+                f29: BigInt("0"),
+                f30: BigInt("0"),
+                f31: BigInt("0")
+            },
+            c9: {
+            f0: BigInt("0"), f1: BigInt("0"), f2: BigInt("0"), f3: BigInt("0"), f4: BigInt("0"),
+            f5: BigInt("0"), f6: BigInt("0"), f7: BigInt("0"), f8: BigInt("0"),
+            f9: BigInt("0"), f10: BigInt("0"), f11: BigInt("0"), f12: BigInt("0"),
+            f13: BigInt("0"), f14: BigInt("0"), f15: BigInt("0"), f16: BigInt("0"),
+            f17: BigInt("0"), f18: BigInt("0"), f19: BigInt("0"), f20: BigInt("0"),
+            f21: BigInt("0"), f22: BigInt("0"), f23: BigInt("0"), f24: BigInt("0"),
+            f25: BigInt("0"), f26: BigInt("0"), f27: BigInt("0"), f28: BigInt("0"),
+            f29: BigInt("0"), f30: BigInt("0"), f31: BigInt("0")
+            }
+            };
+        const signature = "sign197cz8d9hhfnzwxn396ae8q2m3wz2dl7vxzlnewkpgx8hukzev5q4expsj4qqtdyer738yq59pskrucvcsqm8880jgwwgfvanqzflkqyjfdm3jjs5cpuwsu6gpn2zlxmdm9c9mrz9h5grxftlgzlfrpe5zgk29v3paueukdzyuh5zmuwal90eyd23epszaqs3c7ksuun3nlu3z7tlxn2";
+        const signer = "aleo1mxvvqtd68e2dkg5v29kpupqzpdhtz35yfzalsyqf2739gpa82vps87p76n";
+
+        const data_position = {
+            block_index: 16, 
+            shift_a: 80, 
+            shift_b: 48, 
+            mask_a: BigInt("340282366920937254537554992802593505280"), 
+            mask_b: BigInt("1208925819614629174706175")
+        }
+
+        const pcr_0_position = {block_index: 6, shift_a: 64, shift_b: 64, mask_a: BigInt("340282366920938463444927863358058659840"), mask_b: BigInt("18446744073709551615")}
+
+        const pcr_1_position = {block_index: 9, shift_a: 88, shift_b: 40, mask_a: BigInt("340282366920628978453553262363043430400"), mask_b: BigInt("309485009821345068724781055")}
+
+        const pcr_2_position = {block_index: 12, shift_a: 112, shift_b: 16, mask_a: BigInt("340277174624079928635746076935438991360"), mask_b: BigInt("5192296858534827628530496329220095")}
+
+
+        oracle.connect(owner);
         // setting keys
         const setKeysTx = await oracle.set_key(signer, true);
         await setKeysTx.wait();
@@ -5781,5 +6821,61 @@ describe('deploy test', () => {
         await tx.wait();
         }, TIMEOUT)
     })
+
+    describe("Update Historic data", () => {
+
+        const timestamp = BigInt("228673980645668757622957248149721227551");
+        const AttestedData: AttestedData = {
+                data: BigInt("2459651688519496"),
+                attestation_timestamp: BigInt("1749193230")
+            };
+
+        test.failing("should not update Historic data", async () => {
+            oracle.connect(aleoUser3);
+            const tx = await oracle.update_historic_data(true, timestamp, AttestedData);
+            await tx.wait();
+            },
+            TIMEOUT
+        );
+
+        test("should update Historic data by admin", async () => {
+            oracle.connect(owner);
+           
+            const tx = await oracle.update_historic_data(true, timestamp, AttestedData);
+            await tx.wait();
+            expect(await oracle.sgx_attested_data(timestamp)).toEqual(AttestedData);
+            },
+            TIMEOUT
+        );
+
+    });
+
+
+    describe("Transfer Ownership", () => {
+        test.failing("should not transfer ownership by non-admin", async () => {
+            const prevOwner = await oracle.admin(OWNER_INDEX);
+            oracle.connect(aleoUser3);
+            const tx = await oracle.transfer_ownership(aleoUser3);
+            const newOwner = await oracle.admin(OWNER_INDEX);
+            expect(prevOwner).toBe(newOwner)
+            await tx.wait();
+            },
+            TIMEOUT
+        );
+
+        test("Current owner can transfer ownership", async () => {
+            oracle.connect(owner);
+            const currentOwner = await oracle.admin(OWNER_INDEX);
+            expect(currentOwner).toBe(owner);
+
+            const transferOwnershipTx = await oracle.transfer_ownership(aleoUser3);
+            await transferOwnershipTx.wait();
+
+            const newOwner = await oracle.admin(OWNER_INDEX);
+            expect(newOwner).toBe(aleoUser3);
+            },
+            TIMEOUT
+        );
+    });
 
 });
