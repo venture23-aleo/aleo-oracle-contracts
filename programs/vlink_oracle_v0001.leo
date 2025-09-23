@@ -86,6 +86,9 @@ program vlink_oracle_v0001.aleo {
 
   // finalize initialization
   async function finalize_initialize(public owner_address: address) {
+    // Assert bridge has not been initialized before
+    assert(!Mapping::contains(admin, OWNER_INDEX));
+
     Mapping::set(admin, OWNER_INDEX, owner_address);
     Mapping::set(status, STATUS_INDEX, PAUSED_VALUE); // paused by default
   }
@@ -188,6 +191,13 @@ program vlink_oracle_v0001.aleo {
     Mapping::set(allowed_keys, pub_key, allowed);
   }
 
+
+  /// The extraction is controlled by `PositionData` which carries:
+  /// - `shift_a`: right shift to align the masked bits from `a`
+  /// - `shift_b`: left shift to align the masked bits from `b`
+  /// - `mask_a`, `mask_b`: bitmasks selecting the relevant slices
+  ///
+  /// The two aligned slices are OR-combined to produce the final value.
   function extract_value(
     a: u128,
     b: u128,
@@ -302,6 +312,8 @@ program vlink_oracle_v0001.aleo {
     return (0u128, 0u128, 0u128, 0u128);
   }
 
+
+  /// Computes a stable 128-bit request identifier from the subset of `report_data` that represents the notarization request context
   function get_request_hash(report_data: ReportData) -> u128 {
     let first_data_chunk: DataChunk = DataChunk {
       f0: report_data.c0.f0,
@@ -354,6 +366,18 @@ program vlink_oracle_v0001.aleo {
     return request_hash;
   }
 
+
+  /// Verifies an Intel SGX report and its signature against expected security properties,
+  /// and that it binds to the provided `report_data`.
+  ///
+  /// Checks performed:
+  /// 1) SGX enclave flags in `report.c0.f7`:
+  ///    - Enclave initialized bit is set
+  ///    - Debug bit is not set
+  ///    - 64-bit mode bit is set
+  /// 2) `Poseidon8(report_data)` equals the report payload binding fields
+  ///    at `report.c0.f24..f27` (only `f24` is nonzero in this layout)
+  /// 3) Signature verification: `signature::verify(sig, pub_key, Poseidon8(report))`
   function verify_sgx_report(
     report_data: ReportData,
     report: Report,
@@ -383,6 +407,14 @@ program vlink_oracle_v0001.aleo {
     assert(is_valid);
   }
 
+
+  /// Verifies an AWS Nitro Enclave report and its signature against expected bindings,
+  /// and confirms that `report_data` is the message that was attested.
+  ///
+  /// Checks performed:
+  /// 1) `Poseidon8(report_data)` equals `hash_from_report`, which was extracted
+  ///    from the Nitro report blob using `select_chunk` and `extract_value`.
+  /// 2) Signature verification: `signature::verify(sig, pub_key, Poseidon8(report))`
   function verify_nitro_report(
     report_data: ReportData,
     report: Report,
@@ -400,6 +432,24 @@ program vlink_oracle_v0001.aleo {
     assert(is_valid);
   }
 
+
+
+  /// Stores SGX-attested data after full verification and identity match,
+  /// updating both a historical record keyed by a timestamped hash and the
+  /// latest value keyed by a stable `request_hash`.
+  ///
+  /// Pipeline:
+  /// 1) Require HTTP status OK in `report_data.c0.f4 == 200`.
+  /// 2) `verify_sgx_report(...)` to check SGX flags, data binding, and signature.
+  /// 3) Compute `request_hash = get_request_hash(report_data)`.
+  /// 4) Compute `timestamped_hash = Poseidon8({request_hash, attestation_timestamp})`.
+  /// 5) Build `AttestedData { data: report_data.c0.f2, attestation_timestamp: report_data.c0.f3 }`.
+  /// 6) `finalize_set_data_sgx(...)` enforces:
+  ///    - Caller key is allowed
+  ///    - Oracle is unpaused
+  ///    - Report unique_id matches stored `sgx_unique_id`
+  ///    - Historical write at `timestamped_hash`
+  ///    - Latest write at `request_hash` only if timestamp is newer
   async transition set_data_sgx(
     public report_data: ReportData,
     public report: Report,
@@ -461,6 +511,26 @@ program vlink_oracle_v0001.aleo {
     }
   }
 
+
+  /// Stores Nitro-attested data after full verification and PCR equality,
+  /// updating both a historical record keyed by a timestamped hash and the
+  /// latest value keyed by a stable `request_hash`.
+  ///
+  /// Pipeline:
+  /// 1) Parse `data_hash_from_report` from `report.c8` using
+  ///    `select_chunk(..., data_position.block_index)` and `extract_value(...)`.
+  /// 2) Require HTTP status OK in `report_data.c0.f4 == 200`.
+  /// 3) `verify_nitro_report(report_data, report, sig, pub_key, data_hash_from_report)`.
+  /// 4) Compute `request_hash` and `timestamped_hash` as in SGX flow.
+  /// 5) Build `AttestedData` from `report_data.c0.f2` and `c0.f3`.
+  /// 6) Extract PCR0, PCR1, PCR2 from `report.c0` using their respective
+  ///    `PositionData` and reconstruct 48-byte values as three u128 chunks each.
+  /// 7) `finalize_set_data_nitro(...)` enforces:
+  ///    - Caller key is allowed
+  ///    - Oracle is unpaused
+  ///    - Extracted PCRs equal stored `nitro_pcr_values`
+  ///    - Historical write at `timestamped_hash`
+  ///    - Latest write at `request_hash` only if timestamp is newer
   async transition set_data_nitro(
     public report_data: ReportData,
     public report: Report,
