@@ -683,11 +683,11 @@ program vlink_oracle_v0001.aleo {
   }
 
 
-  async transition update_historic_data (public is_sgx_attested_data: bool, public timestamped_hash: u128, public attested_data: AttestedData) -> Future {
-      return finalize_update_historic_data(self.caller, is_sgx_attested_data, timestamped_hash, attested_data);
+  async transition update_oracle_data  (public is_sgx_attested_data: bool, public timestamped_hash: u128, public attested_data: AttestedData) -> Future {
+      return finalize_update_oracle_data(self.caller, is_sgx_attested_data, timestamped_hash, attested_data);
   }
 
-  async function finalize_update_historic_data(public from: address, public is_sgx_attested_data: bool, public timestamped_hash: u128, public attested_data: AttestedData) {
+  async function finalize_update_oracle_data(public from: address, public is_sgx_attested_data: bool, public timestamped_hash: u128, public attested_data: AttestedData) {
     let current_owner: address = Mapping::get(admin, OWNER_INDEX);
     assert_eq(from, current_owner);
 
