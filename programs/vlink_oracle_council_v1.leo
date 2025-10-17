@@ -239,7 +239,7 @@ program vlink_oracle_council_v1.aleo {
     async function finalize_add_member(proposal_hash: field, new_member: address, new_threshold: u8, voters: [address; 5], vote_keys: [field; 5], votes: u8) {
         // threshold should not be greater than current member count 
         let current_members_count: u8 = Mapping::get(settings, TOTAL_MEMBERS_INDEX);
-        assert(new_threshold < current_members_count); 
+        assert(new_threshold <= current_members_count + 1u8); 
 
         // assertion where member count should not be greater than 5
         assert(current_members_count+1u8 <= NUM_OF_ALLOWED_MEMBERS);
@@ -269,7 +269,6 @@ program vlink_oracle_council_v1.aleo {
         Mapping::set(settings, THRESHOLD_INDEX, new_threshold);
 
         // Update total members
-        assert(current_members_count+1u8 <= NUM_OF_ALLOWED_MEMBERS);
         Mapping::set(settings, TOTAL_MEMBERS_INDEX, current_members_count + 1u8);
     }
 
@@ -318,9 +317,6 @@ program vlink_oracle_council_v1.aleo {
 
         // Ensure that the proposal has not been executed
         assert(!Mapping::contains(proposal_executed, proposal_hash));
-
-        // check if deadline has not been crossed 
-        assert(block.height < Mapping::get(proposal_deadline, proposal_hash));
 
         // Mark the proposal as executed
         Mapping::set(proposal_executed, proposal_hash, true);
@@ -378,9 +374,6 @@ program vlink_oracle_council_v1.aleo {
         assert(new_threshold <= total_members);
 
         assert(votes >= threshold);
-
-        // check if deadline has not been crossed 
-        assert(block.height < Mapping::get(proposal_deadline, proposal_hash));
 
         // Ensure that the proposal has not been executed
         assert(!Mapping::contains(proposal_executed, proposal_hash));
