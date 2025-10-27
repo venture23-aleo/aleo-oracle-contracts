@@ -1,4 +1,6 @@
-program vlink_oracle_v0001.aleo {
+program testing.aleo {
+
+
   // 32 byte enclave unique_id
   // split into 2 16 byte u128 chunks
   struct UniqueID {
@@ -38,8 +40,17 @@ program vlink_oracle_v0001.aleo {
     mask_b: u128
   }
 
-  // owner of a contract
-  const owner: address = aleo1rhgdu77hgyqd3xjj8ucu3jj9r2krwz6mnzyd80gncr5fxcwlh5rsvzp9px;
+  // initializer of a contract
+  const initializer: address = aleo1rhgdu77hgyqd3xjj8ucu3jj9r2krwz6mnzyd80gncr5fxcwlh5rsvzp9px;
+  const OWNER_INDEX: bool = true;
+  const STATUS_INDEX: u8 = 0u8;
+  const PAUSED_VALUE: bool = true;
+  const UNPAUSED_VALUE: bool = false;
+  const VALID_HTTP_STATUS: u128 = 200u128;
+
+  mapping admin: bool => address;
+  mapping status: u8 => bool;
+
 
   // unique_id is always stored with 0u8 key
   mapping sgx_unique_id: u8 => UniqueID;
@@ -55,53 +66,12 @@ program vlink_oracle_v0001.aleo {
   // or just hash of notarization request for the lastest stored data
   mapping sgx_attested_data: u128 => AttestedData;
 
-  // storage of data attested by sgx
+  // storage of data attested by nitro
   // hash of notarization request with timestamp => Attested_Data
   // or just hash of notarization request for the lastest stored data
   mapping nitro_attested_data: u128 => AttestedData;
 
-  // set new enclave unique id which is going to be used to verify sgx report
-  async transition set_unique_id(public unique_id: UniqueID) -> Future {
-    // only owner can change enclave unique id
-    assert_eq(owner, self.caller);
 
-    return finalize_set_unique_id(unique_id);
-  }
-
-  async function finalize_set_unique_id(public unique_id: UniqueID) {
-    Mapping::set(sgx_unique_id, 0u8, unique_id);
-  }
-
-  async transition set_pcr_values(public pcr_values: PcrValues) -> Future {
-    // only owner can change pcr values
-    assert_eq(owner, self.caller);
-
-    return finalize_set_pcr_values(pcr_values);
-  }
-
-  async function finalize_set_pcr_values(public pcr_values: PcrValues) {
-    Mapping::set(nitro_pcr_values, 0u8, pcr_values);
-  }
-
-  async transition set_key(
-    public pub_key: address,
-    public allowed: bool
-  ) -> Future {
-    // only owner can change list of allowed keys
-    assert_eq(owner, self.caller);
-
-    return finalize_set_key(
-      pub_key,
-      allowed
-    );
-  }
-
-  async function finalize_set_key(
-    public pub_key: address,
-    public allowed: bool
-  ) {
-    Mapping::set(allowed_keys, pub_key, allowed);
-  }
 
   function extract_value(
     a: u128,
@@ -298,30 +268,15 @@ program vlink_oracle_v0001.aleo {
     assert(is_valid);
   }
 
-  function verify_nitro_report(
-    report_data: ReportData,
-    report: Report,
-    sig: signature,
-    pub_key: address,
-    hash_from_report: u128
-  ) {
-    let report_data_hash: u128 = Poseidon8::hash_to_u128(report_data);
-    assert_eq(report_data_hash, hash_from_report);
 
-    let report_hash: u128 = Poseidon8::hash_to_u128(report);
 
-    // verify that the report was signed by TEE
-    let is_valid: bool = signature::verify(sig, pub_key, report_hash);
-    assert(is_valid);
-  }
-
-  async transition set_data_sgx(
+    transition set_data_sgx(
     public report_data: ReportData,
     public report: Report,
     public sig: signature,
     public pub_key: address
-  ) -> Future {
-    verify_sgx_report(report_data, report, sig, pub_key);
+  ) -> AttestedData {
+    assert_eq(report_data.c0.f4, VALID_HTTP_STATUS);
 
     let request_hash: u128 = get_request_hash(report_data);
 
@@ -337,129 +292,10 @@ program vlink_oracle_v0001.aleo {
       attestation_timestamp: report_data.c0.f3
     };
 
-    return finalize_set_data_sgx(
-      request_hash,
-      timestamped_hash,
-      attested_data,
-      report.c0.f8,
-      report.c0.f9,
-      pub_key
-    );
+    return attested_data;
   }
 
-  async function finalize_set_data_sgx(
-    public request_hash: u128,
-    public timestamped_hash: u128,
-    public attested_data: AttestedData,
-    public report_unique_id_1: u128,
-    public report_unique_id_2: u128,
-    public pub_key: address
-  ) {
-    let pub_key_allowed: bool = Mapping::get_or_use(allowed_keys, pub_key, false);
-    assert(pub_key_allowed);
 
-    // verify unique id from the TEE report
-    let unique_id: UniqueID = Mapping::get(sgx_unique_id, 0u8);
-    assert_eq(unique_id.chunk_1, report_unique_id_1);
-    assert_eq(unique_id.chunk_2, report_unique_id_2);
-
-    Mapping::set(sgx_attested_data, timestamped_hash, attested_data);
-
-    // replace latest data if current data is newer
-    let latest_data: AttestedData = Mapping::get_or_use(sgx_attested_data, request_hash, AttestedData { data: 0u128, attestation_timestamp: 0u128 });
-
-    if (attested_data.attestation_timestamp > latest_data.attestation_timestamp) {
-      Mapping::set(sgx_attested_data, request_hash, attested_data);
-    }
-  }
-
-  async transition set_data_nitro(
-    public report_data: ReportData,
-    public report: Report,
-    public sig: signature,
-    public pub_key: address,
-    public data_position: PositionData,
-    public pcr_0_position: PositionData,
-    public pcr_1_position: PositionData,
-    public pcr_2_position: PositionData
-  ) -> Future {
-    let hash_blocks: (u128, u128, u128, u128) = select_chunk(report.c8, data_position.block_index);
-    let data_hash_from_report: u128 = extract_value(hash_blocks.0, hash_blocks.1, data_position);
-
-    verify_nitro_report(report_data, report, sig, pub_key, data_hash_from_report);
-
-    let request_hash: u128 = get_request_hash(report_data);
-
-    let struct_to_hash: TimestampedHash = TimestampedHash {
-      request_hash: request_hash,
-      attestation_timestamp: report_data.c0.f3
-    };
-
-    let timestamped_hash: u128 = Poseidon8::hash_to_u128(struct_to_hash);
-
-    let attested_data: AttestedData = AttestedData {
-      data: report_data.c0.f2,
-      attestation_timestamp: report_data.c0.f3
-    };
-
-    let pcr_0_block: (u128, u128, u128, u128) = select_chunk(report.c0, pcr_0_position.block_index);
-    let pcr_0_chunk_1: u128 = extract_value(pcr_0_block.0, pcr_0_block.1, pcr_0_position);
-    let pcr_0_chunk_2: u128 = extract_value(pcr_0_block.1, pcr_0_block.2, pcr_0_position);
-    let pcr_0_chunk_3: u128 = extract_value(pcr_0_block.2, pcr_0_block.3, pcr_0_position);
-
-    let pcr_1_block: (u128, u128, u128, u128) = select_chunk(report.c0, pcr_1_position.block_index);
-    let pcr_1_chunk_1: u128 = extract_value(pcr_1_block.0, pcr_1_block.1, pcr_1_position);
-    let pcr_1_chunk_2: u128 = extract_value(pcr_1_block.1, pcr_1_block.2, pcr_1_position);
-    let pcr_1_chunk_3: u128 = extract_value(pcr_1_block.2, pcr_1_block.3, pcr_1_position);
-
-    let pcr_2_block: (u128, u128, u128, u128) = select_chunk(report.c0, pcr_2_position.block_index);
-    let pcr_2_chunk_1: u128 = extract_value(pcr_2_block.0, pcr_2_block.1, pcr_2_position);
-    let pcr_2_chunk_2: u128 = extract_value(pcr_2_block.1, pcr_2_block.2, pcr_2_position);
-    let pcr_2_chunk_3: u128 = extract_value(pcr_2_block.2, pcr_2_block.3, pcr_2_position);
-
-    let pcr_values: PcrValues = PcrValues {
-      pcr_0_chunk_1: pcr_0_chunk_1,
-      pcr_0_chunk_2: pcr_0_chunk_2,
-      pcr_0_chunk_3: pcr_0_chunk_3,
-      pcr_1_chunk_1: pcr_1_chunk_1,
-      pcr_1_chunk_2: pcr_1_chunk_2,
-      pcr_1_chunk_3: pcr_1_chunk_3,
-      pcr_2_chunk_1: pcr_2_chunk_1,
-      pcr_2_chunk_2: pcr_2_chunk_2,
-      pcr_2_chunk_3: pcr_2_chunk_3
-    };
-
-    return finalize_set_data_nitro(
-      request_hash,
-      timestamped_hash,
-      attested_data,
-      pcr_values,
-      pub_key
-    );
-  }
-
-  async function finalize_set_data_nitro(
-    public request_hash: u128,
-    public timestamped_hash: u128,
-    public attested_data: AttestedData,
-    public report_pcr_values: PcrValues,
-    public pub_key: address
-  ) {
-    let pub_key_allowed: bool = Mapping::get_or_use(allowed_keys, pub_key, false);
-    assert(pub_key_allowed);
-
-    let pcr_values: PcrValues = Mapping::get(nitro_pcr_values, 0u8);
-    assert_eq(pcr_values, report_pcr_values);
-
-    Mapping::set(nitro_attested_data, timestamped_hash, attested_data);
-
-    // replace latest data if current data is newer
-    let latest_data: AttestedData = Mapping::get_or_use(nitro_attested_data, request_hash, AttestedData { data: 0u128, attestation_timestamp: 0u128 });
-
-    if (attested_data.attestation_timestamp > latest_data.attestation_timestamp) {
-      Mapping::set(nitro_attested_data, request_hash, attested_data);
-    }
-  }
 
   // a 512-byte data chunk
   struct DataChunk {
@@ -520,4 +356,9 @@ program vlink_oracle_v0001.aleo {
     c6: DataChunk,
     c7: DataChunk
   }
+
+
+
+
+
 }

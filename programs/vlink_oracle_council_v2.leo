@@ -1,11 +1,7 @@
-program vlink_oracle_council_v1.aleo {
+program vlink_oracle_council_v2.aleo {
 
-
-    // This constructor is for the "admin" mode.
-    // It ensures that only the designated admin can upgrade the program.
-    @admin(address="aleo1rhgdu77hgyqd3xjj8ucu3jj9r2krwz6mnzyd80gncr5fxcwlh5rsvzp9px")
+    @noupgrade
     async constructor() {
-        // The Leo compiler automatically generates the constructor logic.
     }
 
     struct ProposalVote {
@@ -66,7 +62,7 @@ program vlink_oracle_council_v1.aleo {
 
     const ZERO_ADDRESS: address = aleo1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq3ljyzc;
 
-    const INITIALIZER_ADDRESS : address = aleo1rhgdu77hgyqd3xjj8ucu3jj9r2krwz6mnzyd80gncr5fxcwlh5rsvzp9px;
+    const INITIALIZER_ADDRESS : address = aleo1fg8y0ax9g0yhahrknngzwxkpcf7ejy3mm6cent4mmtwew5ueps8s6jzl27;
 
     const TAG_ADD_MEMBER: u8 = 1u8;
     const TAG_REMOVE_MEMBER: u8 = 2u8;

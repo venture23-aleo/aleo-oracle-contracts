@@ -1,16 +1,17 @@
-import vlink_oracle_council_v1.aleo;
-import vlink_oracle_v0001.aleo;
+import vlink_oracle_checksum_v2.aleo;
+import vlink_oracle_council_v2.aleo;
+import vlink_oracle_v2.aleo;
 
-program vlink_oracle_council_imp_v1.aleo
+program vlink_oracle_council_imp_v2.aleo
 {   
-
-    // This constructor is for the "admin" mode.
-    // It ensures that only the designated admin can upgrade the program.
-    @admin(address="aleo1rhgdu77hgyqd3xjj8ucu3jj9r2krwz6mnzyd80gncr5fxcwlh5rsvzp9px")
+    // upgrade through the checksum mapping in another program
+    @checksum(mapping="vlink_oracle_checksum_v2.aleo/approved_checksums", key="vlink_oracle_council_imp_v2.aleo")
     async constructor() {
         // The Leo compiler automatically generates the constructor logic.
     }
 
+
+    //TODO: add a function to change admin of checksum contract
 
     ///////////////////////////////////////////
     /////// Bridge: Transfer Ownership ////////
@@ -23,6 +24,13 @@ program vlink_oracle_council_imp_v1.aleo
     const TAG_UPDATE_HISTORIC_DATA: u8 = 5u8;
     const TAG_PAUSE: u8 = 6u8;
     const TAG_UNPAUSE: u8 = 7u8;
+    const TAG_UPGRADE_PROGRAM: u8 = 8u8;
+    const TAG_TRANSFER_OWNERSHIP_CHECKSUM: u8 = 9u8;
+
+
+    ///////////////////////////////////////////
+    /////// Oracle: Transfer Ownership ////////
+    ///////////////////////////////////////////
 
 
     struct TransferOwnership {
@@ -31,7 +39,7 @@ program vlink_oracle_council_imp_v1.aleo
         new_owner: address
     }
 
-    async transition transfer_ownership(public id: u32, public new_owner: address, public voters: [address; 5]) -> Future{
+    async transition oracle_transfer_ownership(public id: u32, public new_owner: address, public voters: [address; 5]) -> Future{
         let proposal: TransferOwnership = TransferOwnership {
             tag: TAG_TRANSFER_OWNERSHIP,
             id,
@@ -40,14 +48,14 @@ program vlink_oracle_council_imp_v1.aleo
         let proposal_hash: field = BHP256::hash_to_field(proposal);
 
         // Execute the proposal
-        let transfering_ownership: Future = vlink_oracle_v0001.aleo/transfer_ownership(new_owner);
+        let transfering_ownership: Future = vlink_oracle_v2.aleo/transfer_ownership(new_owner);
 
-        let external_execute: Future = vlink_oracle_council_v1.aleo/external_execute(id, proposal_hash, voters);
+        let external_execute: Future = vlink_oracle_council_v2.aleo/external_execute(id, proposal_hash, voters);
 
-        return finalize_tb_transfer_ownership(transfering_ownership, external_execute);
+        return f_orc_transfer_ownership(transfering_ownership, external_execute);
     }
 
-    async function finalize_tb_transfer_ownership(f0: Future, f1: Future) {
+    async function f_orc_transfer_ownership(f0: Future, f1: Future) {
         f0.await();
         f1.await();
     }
@@ -71,9 +79,9 @@ program vlink_oracle_council_imp_v1.aleo
         let proposal_hash: field = BHP256::hash_to_field(proposal);
 
         // Execute the proposal
-        let setting_unique_id: Future = vlink_oracle_v0001.aleo/set_unique_id(unique_id);
+        let setting_unique_id: Future = vlink_oracle_v2.aleo/set_unique_id(unique_id);
 
-        let external_execute: Future = vlink_oracle_council_v1.aleo/external_execute(id, proposal_hash, voters);
+        let external_execute: Future = vlink_oracle_council_v2.aleo/external_execute(id, proposal_hash, voters);
 
         return finalize_tb_set_unique_id(setting_unique_id, external_execute);
     }
@@ -103,9 +111,9 @@ program vlink_oracle_council_imp_v1.aleo
         let proposal_hash: field = BHP256::hash_to_field(proposal);
 
         // Execute the proposal
-        let setting_pcr_values: Future = vlink_oracle_v0001.aleo/set_pcr_values(pcr_values);
+        let setting_pcr_values: Future = vlink_oracle_v2.aleo/set_pcr_values(pcr_values);
 
-        let external_execute: Future = vlink_oracle_council_v1.aleo/external_execute(id, proposal_hash, voters);
+        let external_execute: Future = vlink_oracle_council_v2.aleo/external_execute(id, proposal_hash, voters);
 
         return finalize_tb_set_pcr_values(setting_pcr_values, external_execute);
     }
@@ -136,9 +144,9 @@ program vlink_oracle_council_imp_v1.aleo
         let proposal_hash: field = BHP256::hash_to_field(proposal);
 
         // Execute the proposal
-        let setting_keys : Future = vlink_oracle_v0001.aleo/set_key(keys, status);
+        let setting_keys : Future = vlink_oracle_v2.aleo/set_key(keys, status);
 
-        let external_execute: Future = vlink_oracle_council_v1.aleo/external_execute(id, proposal_hash, voters);
+        let external_execute: Future = vlink_oracle_council_v2.aleo/external_execute(id, proposal_hash, voters);
 
         return finalize_tb_update_threshold(setting_keys, external_execute);
     }
@@ -171,9 +179,9 @@ program vlink_oracle_council_imp_v1.aleo
         let proposal_hash: field = BHP256::hash_to_field(proposal);
 
         // Execute the proposal
-        let add_chain: Future = vlink_oracle_v0001.aleo/update_historic_data(is_sgx_attested_data, timestamped_hash, attested_data);
+        let add_chain: Future = vlink_oracle_v2.aleo/update_historic_data(is_sgx_attested_data, timestamped_hash, attested_data);
 
-        let external_execute: Future = vlink_oracle_council_v1.aleo/external_execute(id, proposal_hash, voters);
+        let external_execute: Future = vlink_oracle_council_v2.aleo/external_execute(id, proposal_hash, voters);
         
         return finalize_tb_add_chain(add_chain, external_execute);
     }
@@ -202,9 +210,9 @@ program vlink_oracle_council_imp_v1.aleo
         let proposal_hash: field = BHP256::hash_to_field(proposal);
 
         // Execute the proposal
-        let pausing: Future = vlink_oracle_v0001.aleo/pause();
+        let pausing: Future = vlink_oracle_v2.aleo/pause();
 
-        let external_execute: Future = vlink_oracle_council_v1.aleo/external_execute(id, proposal_hash, voters);
+        let external_execute: Future = vlink_oracle_council_v2.aleo/external_execute(id, proposal_hash, voters);
 
         return finalize_tb_pause(pausing, external_execute);
     }
@@ -231,9 +239,9 @@ program vlink_oracle_council_imp_v1.aleo
         let proposal_hash: field = BHP256::hash_to_field(proposal);
 
         // Execute the proposal
-        let unpausing: Future = vlink_oracle_v0001.aleo/unpause();
+        let unpausing: Future = vlink_oracle_v2.aleo/unpause();
 
-        let external_execute: Future = vlink_oracle_council_v1.aleo/external_execute(id, proposal_hash, voters);
+        let external_execute: Future = vlink_oracle_council_v2.aleo/external_execute(id, proposal_hash, voters);
 
         return finalize_tb_unpause(unpausing, external_execute);
     }
@@ -242,4 +250,68 @@ program vlink_oracle_council_imp_v1.aleo
         f0.await();
         f1.await();
     }
+
+
+    /// to update programs through checksum contract
+    struct UpdateProgramCheckSum {
+        tag: u8,
+        id: u32,
+        program_address: address,
+        approved_checksum: [u8; 32]
+    }
+
+    async transition update_program_checksum(public id: u32, public voters: [address; 5], public program_address: address, public approved_checksum: [u8; 32]) -> Future {
+        let proposal: UpdateProgramCheckSum = UpdateProgramCheckSum {
+            tag:TAG_UPGRADE_PROGRAM,
+            id,
+            program_address,
+            approved_checksum
+        };
+        let proposal_hash: field = BHP256::hash_to_field(proposal);
+
+        let update_pc: Future = vlink_oracle_checksum_v2.aleo/update_program_checksum(program_address, approved_checksum);
+
+        let external_execute: Future = vlink_oracle_council_v2.aleo/external_execute(id, proposal_hash, voters);
+
+        return finalize_update_pc(external_execute, update_pc);
+    }
+
+    async function finalize_update_pc(f0: Future, f1: Future) {
+        f0.await();
+        f1.await();
+    }
+
+
+    ///////////////////////////////////////////
+    /////// Checksum: Transfer Ownership ////////
+    ///////////////////////////////////////////
+
+    struct TransferOwnershipChecksum {
+        tag: u8,
+        id: u32,
+        new_owner: address
+    }
+
+    async transition checksum_transfer_ownership(public id: u32, public new_owner: address, public voters: [address; 5]) -> Future{
+        let proposal: TransferOwnershipChecksum = TransferOwnershipChecksum {
+            tag: TAG_TRANSFER_OWNERSHIP_CHECKSUM,
+            id,
+            new_owner
+        };
+        let proposal_hash: field = BHP256::hash_to_field(proposal);
+
+        // Execute the proposal
+        let transfering_ownership: Future = vlink_oracle_checksum_v2.aleo/set_admin(new_owner);
+
+        let external_execute: Future = vlink_oracle_council_v2.aleo/external_execute(id, proposal_hash, voters);
+
+        return f_cksm_transfer_ownership(transfering_ownership, external_execute);
+    }
+
+    async function f_cksm_transfer_ownership(f0: Future, f1: Future) {
+        f0.await();
+        f1.await();
+    }
+
+
 }

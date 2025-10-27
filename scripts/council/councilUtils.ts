@@ -2,13 +2,13 @@ import { hashStruct } from "../../utils/hash";
 
 import { COUNCIL_THRESHOLD_INDEX, COUNCIL_TOTAL_MEMBERS_INDEX } from "../../utils/constants";
 import { ExecutionMode } from "@doko-js/core";
-import { Vlink_oracle_council_v1Contract } from "../../artifacts/js/vlink_oracle_council_v1";
-import { ProposalVote } from "../../artifacts/js/types/vlink_oracle_council_v1";
-import { getProposalVoteLeo } from "../../artifacts/js/js2leo/vlink_oracle_council_v1";
+import { Vlink_oracle_council_v2Contract } from "../../artifacts/js/vlink_oracle_council_v2";
+import { ProposalVote } from "../../artifacts/js/types/vlink_oracle_council_v2";
+import { getProposalVoteLeo } from "../../artifacts/js/js2leo/vlink_oracle_council_v2";
 
 const mode = ExecutionMode.SnarkExecute;
 
-const council = new Vlink_oracle_council_v1Contract({ mode, priorityFee: 10_000 });
+const council = new Vlink_oracle_council_v2Contract({ mode, priorityFee: 10_000 });
 
 export const validateProposer = async (proposer: string) => {
   const isMember = await council.members(proposer, false);

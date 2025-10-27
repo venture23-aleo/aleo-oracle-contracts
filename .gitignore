@@ -1,5 +1,5 @@
 node_modules/
-./artifacts/
+artifacts/
 .env
 
 !./artifacts/js/js2leo/common.ts

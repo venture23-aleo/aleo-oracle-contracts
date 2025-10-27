@@ -1,16 +1,16 @@
-import { Vlink_oracle_council_v1Contract } from "../../artifacts/js/vlink_oracle_council_v1";
+import { Vlink_oracle_council_v2Contract } from "../../artifacts/js/vlink_oracle_council_v2";
 import { hashStruct } from "../../utils/hash";
 import { COUNCIL_THRESHOLD_INDEX, COUNCIL_TOTAL_PROPOSALS_INDEX, SUPPORTED_THRESHOLD, TAG_UPDATE_THRESHOLD } from "../../utils/constants";
 import { getProposalStatus, validateExecution, validateProposer } from "./councilUtils";
 import { getVotersWithYesVotes, padWithZeroAddress } from "../../utils/voters";
 import { ExecutionMode } from "@doko-js/core";
-import { UpdateThreshold } from "../../artifacts/js/types/vlink_oracle_council_v1";
-import { getUpdateThresholdLeo } from "../../artifacts/js/js2leo/vlink_oracle_council_v1";
+import { UpdateThreshold } from "../../artifacts/js/types/vlink_oracle_council_v2";
+import { getUpdateThresholdLeo } from "../../artifacts/js/js2leo/vlink_oracle_council_v2";
 
 const mode = ExecutionMode.SnarkExecute;
 
 
-const council = new Vlink_oracle_council_v1Contract({ mode, priorityFee: 10_000 });
+const council = new Vlink_oracle_council_v2Contract({ mode, priorityFee: 10_000 });
 
 //////////////////////
 ///// Propose ////////

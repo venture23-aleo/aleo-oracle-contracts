@@ -1,8 +1,9 @@
-program vlink_oracle_v0001.aleo {
+import vlink_oracle_checksum_v2.aleo;
 
-    // This constructor is for the "admin" mode.
-    // It ensures that only the designated admin can upgrade the program.
-    @admin(address="aleo1rhgdu77hgyqd3xjj8ucu3jj9r2krwz6mnzyd80gncr5fxcwlh5rsvzp9px")
+program vlink_oracle_v2.aleo {
+
+    // upgrade through the checksum mapping in another program
+    @checksum(mapping="vlink_oracle_checksum_v2.aleo/approved_checksums", key="vlink_oracle_v2.aleo")
     async constructor() {
         // The Leo compiler automatically generates the constructor logic.
     }
@@ -47,7 +48,7 @@ program vlink_oracle_v0001.aleo {
   }
 
   // initializer of a contract
-  const initializer: address = aleo1rhgdu77hgyqd3xjj8ucu3jj9r2krwz6mnzyd80gncr5fxcwlh5rsvzp9px;
+  const initializer: address = aleo1fg8y0ax9g0yhahrknngzwxkpcf7ejy3mm6cent4mmtwew5ueps8s6jzl27;
   const OWNER_INDEX: bool = true;
   const STATUS_INDEX: u8 = 0u8;
   const PAUSED_VALUE: bool = true;

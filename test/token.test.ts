@@ -1,15 +1,15 @@
 import { ExecutionMode, parseJSONLikeString } from '@doko-js/core';
-import { Testing_offical_oracle_v1Contract } from '../artifacts/js/testing_offical_oracle_v1';
+import { Testing_offical_oracle_v2Contract } from '../artifacts/js/testing_offical_oracle_v2';
 import data from './eth_usdc.json';
-import { getDataChunk , getReportData, getReport, getUniqueID} from '../artifacts/js/leo2js/testing_offical_oracle_v1';
+import { getDataChunk , getReportData, getReport, getUniqueID} from '../artifacts/js/leo2js/testing_offical_oracle_v2';
 const TIMEOUT = 200_000;
 
 // Available modes are evaluate | execute (Check README.md for further description)
 const mode = ExecutionMode.LeoRun;
 // Contract class initialization
-const contract = new Testing_offical_oracle_v1Contract({ mode });
+const contract = new Testing_offical_oracle_v2Contract({ mode });
 
-// let testnetOracle = new Official_oracle_v1Contract({ mode });
+// let testnetOracle = new Official_oracle_v2Contract({ mode });
 
 // This maps the accounts defined inside networks in aleo-config.js and return array of address of respective private keys
 // const [admin] = contract.getAccounts();

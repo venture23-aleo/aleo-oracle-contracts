@@ -1,14 +1,14 @@
 import { ExecutionMode, parseJSONLikeString } from '@doko-js/core';
 import data from './eth_usdc.json';
-import { getDataChunk, getReportData, getReport, getUniqueID } from '../artifacts/js/leo2js/testing_offical_oracle_v1';
-import { Vlink_oracle_v0001Contract } from '../artifacts/js/vlink_oracle_v0001';
-import { AttestedData } from '../artifacts/js/types/vlink_oracle_v0001';
+import { getDataChunk, getReportData, getReport, getUniqueID } from '../artifacts/js/leo2js/testing_offical_oracle_v2';
+import { Vlink_oracle_v2Contract } from '../artifacts/js/vlink_oracle_v2';
+import { AttestedData } from '../artifacts/js/types/vlink_oracle_v2';
 const TIMEOUT = 20000_000;
 
 // Available modes are evaluate | execute (Check README.md for further description)
 const mode = ExecutionMode.SnarkExecute;
 // Contract class initialization
-const oracle = new Vlink_oracle_v0001Contract({ mode });
+const oracle = new Vlink_oracle_v2Contract({ mode });
 const [owner, aleoUser2, aleoUser3] = oracle.getAccounts();
 const OWNER_INDEX = true;
 
