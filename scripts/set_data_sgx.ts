@@ -1,9 +1,9 @@
 import { ExecutionMode, parseJSONLikeString } from "@doko-js/core";
-import { Vlink_oracle_v2Contract } from "../artifacts/js/vlink_oracle_v2";
+import { Veru_oracle_v2Contract } from "../artifacts/js/veru_oracle_v2";
 import data from '../test/eth_usdc.json';
-import { getReport, getReportData, getUniqueID } from "../artifacts/js/leo2js/vlink_oracle_v2";
+import { getReport, getReportData, getUniqueID } from "../artifacts/js/leo2js/veru_oracle_v2";
 
-const oracle = new Vlink_oracle_v2Contract({mode: ExecutionMode.SnarkExecute});
+const oracle = new Veru_oracle_v2Contract({mode: ExecutionMode.SnarkExecute});
 
 const userData = parseJSONLikeString(data.oracleData.userData);
 

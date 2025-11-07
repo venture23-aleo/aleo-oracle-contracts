@@ -1,16 +1,16 @@
 import { ExecutionMode } from "@doko-js/core";
 
-import { Vlink_oracle_v2Contract } from "../../artifacts/js/vlink_oracle_v2";
-import { Vlink_oracle_council_v2Contract } from "../../artifacts/js/vlink_oracle_council_v2";
-import { Vlink_oracle_council_imp_v2Contract } from "../../artifacts/js/vlink_oracle_council_imp_v2";
-import { Vlink_oracle_checksum_v2Contract } from "../../artifacts/js/vlink_oracle_checksum_v2";
+import { Veru_oracle_v2Contract } from "../../artifacts/js/veru_oracle_v2";
+import { Veru_oracle_council_v2Contract } from "../../artifacts/js/veru_oracle_council_v2";
+import { Veru_oracle_council_imp_v2Contract } from "../../artifacts/js/veru_oracle_council_imp_v2";
+import { Veru_oracle_checksum_v2Contract } from "../../artifacts/js/veru_oracle_checksum_v2";
 
 const mode = ExecutionMode.SnarkExecute;
 
-const oracleDeploymentChecksum = new Vlink_oracle_checksum_v2Contract({mode: mode});
-const oracle = new Vlink_oracle_v2Contract({mode: mode});
-const council = new Vlink_oracle_council_v2Contract({mode: mode});
-const councilImple = new Vlink_oracle_council_imp_v2Contract({mode: mode});
+const oracleDeploymentChecksum = new Veru_oracle_checksum_v2Contract({mode: mode});
+const oracle = new Veru_oracle_v2Contract({mode: mode});
+const council = new Veru_oracle_council_v2Contract({mode: mode});
+const councilImple = new Veru_oracle_council_imp_v2Contract({mode: mode});
 
 
 const intialize = async (initialCouncilList: string[], initialCouncilThresholdData: number) => {

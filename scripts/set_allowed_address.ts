@@ -1,8 +1,8 @@
 import { ExecutionMode } from "@doko-js/core";
-import { Vlink_oracle_v2Contract } from "../artifacts/js/vlink_oracle_v2";
+import { Veru_oracle_v2Contract } from "../artifacts/js/veru_oracle_v2";
 
 
-const oracle = new Vlink_oracle_v2Contract({mode: ExecutionMode.SnarkExecute});
+const oracle = new Veru_oracle_v2Contract({mode: ExecutionMode.SnarkExecute});
 
 export const setAllow = async (allowed_address: string) => {
 

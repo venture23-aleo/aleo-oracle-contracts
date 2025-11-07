@@ -16,7 +16,7 @@ export default {
     //   priorityFee: 0.01
     // },
     testnet: {
-      endpoint: 'https://api.explorer.provable.com/v1',
+      endpoint: 'http://localhost:3030',
       accounts: [
         process.env.ALEO_PRIVATE_KEY,
       ],
