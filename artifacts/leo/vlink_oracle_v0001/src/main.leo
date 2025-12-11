@@ -39,7 +39,7 @@ program vlink_oracle_v0001.aleo {
   }
 
   // owner of a contract
-  const owner: address = aleo1urxgwwfph8243x68r2sh772vl55ln0cvzvru4j9nm9er7x40lgyqkrthfe;
+  const owner: address = aleo1rhgdu77hgyqd3xjj8ucu3jj9r2krwz6mnzyd80gncr5fxcwlh5rsvzp9px;
 
   // unique_id is always stored with 0u8 key
   mapping sgx_unique_id: u8 => UniqueID;

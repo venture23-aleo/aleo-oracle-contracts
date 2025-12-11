@@ -39,7 +39,7 @@ import {
   BaseContract
 } from "../../contract/base-contract";
 import {
-  TransactionModel
+  Transaction
 } from "@provablehq/sdk";
 import * as receipt from "./transitions/vlink_oracle_v0001";
 
@@ -56,7 +56,7 @@ export class Vlink_oracle_v0001Contract extends BaseContract {
       isImportedAleo: false
     });
   }
-  async set_unique_id(r0: UniqueID): Promise < TransactionResponse < TransactionModel & receipt.Vlink_oracle_v0001Set_unique_idTransition, [] >> {
+  async set_unique_id(r0: UniqueID): Promise < TransactionResponse < Transaction & receipt.Vlink_oracle_v0001Set_unique_idTransition, [] >> {
     const r0Leo = js2leo.json(getUniqueIDLeo(r0));
 
     const params = [r0Leo]
@@ -64,7 +64,7 @@ export class Vlink_oracle_v0001Contract extends BaseContract {
     return result
   }
 
-  async set_pcr_values(r0: PcrValues): Promise < TransactionResponse < TransactionModel & receipt.Vlink_oracle_v0001Set_pcr_valuesTransition, [] >> {
+  async set_pcr_values(r0: PcrValues): Promise < TransactionResponse < Transaction & receipt.Vlink_oracle_v0001Set_pcr_valuesTransition, [] >> {
     const r0Leo = js2leo.json(getPcrValuesLeo(r0));
 
     const params = [r0Leo]
@@ -72,7 +72,7 @@ export class Vlink_oracle_v0001Contract extends BaseContract {
     return result
   }
 
-  async set_key(r0: LeoAddress, r1: boolean): Promise < TransactionResponse < TransactionModel & receipt.Vlink_oracle_v0001Set_keyTransition, [] >> {
+  async set_key(r0: LeoAddress, r1: boolean): Promise < TransactionResponse < Transaction & receipt.Vlink_oracle_v0001Set_keyTransition, [] >> {
     const r0Leo = js2leo.address(r0);
     const r1Leo = js2leo.boolean(r1);
 
@@ -81,7 +81,7 @@ export class Vlink_oracle_v0001Contract extends BaseContract {
     return result
   }
 
-  async set_data_sgx(r0: ReportData, r1: Report, r2: string, r3: LeoAddress): Promise < TransactionResponse < TransactionModel & receipt.Vlink_oracle_v0001Set_data_sgxTransition, [] >> {
+  async set_data_sgx(r0: ReportData, r1: Report, r2: string, r3: LeoAddress): Promise < TransactionResponse < Transaction & receipt.Vlink_oracle_v0001Set_data_sgxTransition, [] >> {
     const r0Leo = js2leo.json(getReportDataLeo(r0));
     const r1Leo = js2leo.json(getReportLeo(r1));
     const r2Leo = js2leo.signature(r2);
@@ -92,7 +92,7 @@ export class Vlink_oracle_v0001Contract extends BaseContract {
     return result
   }
 
-  async set_data_nitro(r0: ReportData, r1: Report, r2: string, r3: LeoAddress, r4: PositionData, r5: PositionData, r6: PositionData, r7: PositionData): Promise < TransactionResponse < TransactionModel & receipt.Vlink_oracle_v0001Set_data_nitroTransition, [] >> {
+  async set_data_nitro(r0: ReportData, r1: Report, r2: string, r3: LeoAddress, r4: PositionData, r5: PositionData, r6: PositionData, r7: PositionData): Promise < TransactionResponse < Transaction & receipt.Vlink_oracle_v0001Set_data_nitroTransition, [] >> {
     const r0Leo = js2leo.json(getReportDataLeo(r0));
     const r1Leo = js2leo.json(getReportLeo(r1));
     const r2Leo = js2leo.signature(r2);

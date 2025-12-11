@@ -1,4 +1,12 @@
 program vlink_oracle_v0001.aleo {
+
+    // This constructor is for the "admin" mode.
+    // It ensures that only the designated admin can upgrade the program.
+    @admin(address="aleo1rhgdu77hgyqd3xjj8ucu3jj9r2krwz6mnzyd80gncr5fxcwlh5rsvzp9px")
+    async constructor() {
+        // The Leo compiler automatically generates the constructor logic.
+    }
+
   // 32 byte enclave unique_id
   // split into 2 16 byte u128 chunks
   struct UniqueID {
@@ -38,8 +46,17 @@ program vlink_oracle_v0001.aleo {
     mask_b: u128
   }
 
-  // owner of a contract
-  const owner: address = aleo1rhgdu77hgyqd3xjj8ucu3jj9r2krwz6mnzyd80gncr5fxcwlh5rsvzp9px;
+  // initializer of a contract
+  const initializer: address = aleo1rhgdu77hgyqd3xjj8ucu3jj9r2krwz6mnzyd80gncr5fxcwlh5rsvzp9px;
+  const OWNER_INDEX: bool = true;
+  const STATUS_INDEX: u8 = 0u8;
+  const PAUSED_VALUE: bool = true;
+  const UNPAUSED_VALUE: bool = false;
+  const VALID_HTTP_STATUS: u128 = 200u128;
+
+  mapping admin: bool => address;
+  mapping status: u8 => bool;
+
 
   // unique_id is always stored with 0u8 key
   mapping sgx_unique_id: u8 => UniqueID;
@@ -55,31 +72,99 @@ program vlink_oracle_v0001.aleo {
   // or just hash of notarization request for the lastest stored data
   mapping sgx_attested_data: u128 => AttestedData;
 
-  // storage of data attested by sgx
+  // storage of data attested by nitro
   // hash of notarization request with timestamp => Attested_Data
   // or just hash of notarization request for the lastest stored data
   mapping nitro_attested_data: u128 => AttestedData;
 
-  // set new enclave unique id which is going to be used to verify sgx report
-  async transition set_unique_id(public unique_id: UniqueID) -> Future {
-    // only owner can change enclave unique id
-    assert_eq(owner, self.caller);
 
-    return finalize_set_unique_id(unique_id);
+  async transition initialize(public owner_address: address) -> Future {
+    // can be called only once
+    assert_eq(self.caller, initializer);
+    return finalize_initialize(owner_address);
   }
 
-  async function finalize_set_unique_id(public unique_id: UniqueID) {
+  // finalize initialization
+  async function finalize_initialize(public owner_address: address) {
+    // Assert bridge has not been initialized before
+    assert(!Mapping::contains(admin, OWNER_INDEX));
+
+    Mapping::set(admin, OWNER_INDEX, owner_address);
+    Mapping::set(status, STATUS_INDEX, PAUSED_VALUE); // paused by default
+  }
+
+
+  /// Update the existing admin
+  /// Can only be called from admin
+  async transition transfer_ownership(public new_owner: address) -> Future{
+    return finalize_transfer_ownership(self.caller, new_owner);
+  }
+
+  async function finalize_transfer_ownership(from: address, new_owner: address) {
+    // Get the admin address
+    // If program not initialized, this fails
+    let current_owner: address = Mapping::get(admin, OWNER_INDEX);
+    assert_eq(from, current_owner);
+
+    Mapping::set(admin, OWNER_INDEX, new_owner);
+  }
+
+
+    //////////////////////////////////
+    //// Pause / Unpause //////
+    //////////////////////////////////
+
+    /// Pauses the oracle
+    async transition pause() -> Future{
+        return finalize_pause(self.caller);
+    }
+
+    async function finalize_pause(from: address) {
+        // Get the owner address
+        // If program not initialized, this fails
+        let owner: address = Mapping::get(admin, OWNER_INDEX);
+        assert_eq(from, owner);
+
+        Mapping::set(status, STATUS_INDEX, PAUSED_VALUE);
+    }
+
+    /// Unpauses the oracle
+    /// There can be transfers only when the oracle is unpaused
+    async transition unpause() -> Future{
+        return finalize_unpause(self.caller);
+    }
+
+    async function finalize_unpause(from: address) {
+        // Get the owner address
+        // If program not initialized, this fails
+        let owner: address = Mapping::get(admin, OWNER_INDEX);
+        assert_eq(from, owner);
+
+        Mapping::set(status, STATUS_INDEX, UNPAUSED_VALUE);
+    }
+
+  // set new enclave unique id which is going to be used to verify sgx report
+  async transition set_unique_id(public unique_id: UniqueID) -> Future {
+    return finalize_set_unique_id(self.caller, unique_id);
+  }
+
+  async function finalize_set_unique_id(public from: address, public unique_id: UniqueID) {
+    // caller must be admin
+    let current_owner: address = Mapping::get(admin, OWNER_INDEX);
+    assert_eq(from, current_owner);
+
     Mapping::set(sgx_unique_id, 0u8, unique_id);
   }
 
   async transition set_pcr_values(public pcr_values: PcrValues) -> Future {
-    // only owner can change pcr values
-    assert_eq(owner, self.caller);
-
-    return finalize_set_pcr_values(pcr_values);
+    return finalize_set_pcr_values(self.caller, pcr_values);
   }
 
-  async function finalize_set_pcr_values(public pcr_values: PcrValues) {
+  async function finalize_set_pcr_values(public from: address, public pcr_values: PcrValues) {
+    // caller must be admin
+    let current_owner: address = Mapping::get(admin, OWNER_INDEX);
+    assert_eq(from, current_owner);
+
     Mapping::set(nitro_pcr_values, 0u8, pcr_values);
   }
 
@@ -87,22 +172,32 @@ program vlink_oracle_v0001.aleo {
     public pub_key: address,
     public allowed: bool
   ) -> Future {
-    // only owner can change list of allowed keys
-    assert_eq(owner, self.caller);
-
     return finalize_set_key(
+      self.caller,
       pub_key,
       allowed
     );
   }
 
   async function finalize_set_key(
+    public from: address,
     public pub_key: address,
     public allowed: bool
   ) {
+    // caller must be admin
+    let current_owner: address = Mapping::get(admin, OWNER_INDEX);
+    assert_eq(from, current_owner);
+
     Mapping::set(allowed_keys, pub_key, allowed);
   }
 
+
+  /// The extraction is controlled by `PositionData` which carries:
+  /// - `shift_a`: right shift to align the masked bits from `a`
+  /// - `shift_b`: left shift to align the masked bits from `b`
+  /// - `mask_a`, `mask_b`: bitmasks selecting the relevant slices
+  ///
+  /// The two aligned slices are OR-combined to produce the final value.
   function extract_value(
     a: u128,
     b: u128,
@@ -217,6 +312,8 @@ program vlink_oracle_v0001.aleo {
     return (0u128, 0u128, 0u128, 0u128);
   }
 
+
+  /// Computes a stable 128-bit request identifier from the subset of `report_data` that represents the notarization request context
   function get_request_hash(report_data: ReportData) -> u128 {
     let first_data_chunk: DataChunk = DataChunk {
       f0: report_data.c0.f0,
@@ -269,6 +366,18 @@ program vlink_oracle_v0001.aleo {
     return request_hash;
   }
 
+
+  /// Verifies an Intel SGX report and its signature against expected security properties,
+  /// and that it binds to the provided `report_data`.
+  ///
+  /// Checks performed:
+  /// 1) SGX enclave flags in `report.c0.f7`:
+  ///    - Enclave initialized bit is set
+  ///    - Debug bit is not set
+  ///    - 64-bit mode bit is set
+  /// 2) `Poseidon8(report_data)` equals the report payload binding fields
+  ///    at `report.c0.f24..f27` (only `f24` is nonzero in this layout)
+  /// 3) Signature verification: `signature::verify(sig, pub_key, Poseidon8(report))`
   function verify_sgx_report(
     report_data: ReportData,
     report: Report,
@@ -298,6 +407,14 @@ program vlink_oracle_v0001.aleo {
     assert(is_valid);
   }
 
+
+  /// Verifies an AWS Nitro Enclave report and its signature against expected bindings,
+  /// and confirms that `report_data` is the message that was attested.
+  ///
+  /// Checks performed:
+  /// 1) `Poseidon8(report_data)` equals `hash_from_report`, which was extracted
+  ///    from the Nitro report blob using `select_chunk` and `extract_value`.
+  /// 2) Signature verification: `signature::verify(sig, pub_key, Poseidon8(report))`
   function verify_nitro_report(
     report_data: ReportData,
     report: Report,
@@ -315,12 +432,31 @@ program vlink_oracle_v0001.aleo {
     assert(is_valid);
   }
 
+
+
+  /// Stores SGX-attested data after full verification and identity match,
+  /// updating both a historical record keyed by a timestamped hash and the
+  /// latest value keyed by a stable `request_hash`.
+  ///
+  /// Pipeline:
+  /// 1) Require HTTP status OK in `report_data.c0.f4 == 200`.
+  /// 2) `verify_sgx_report(...)` to check SGX flags, data binding, and signature.
+  /// 3) Compute `request_hash = get_request_hash(report_data)`.
+  /// 4) Compute `timestamped_hash = Poseidon8({request_hash, attestation_timestamp})`.
+  /// 5) Build `AttestedData { data: report_data.c0.f2, attestation_timestamp: report_data.c0.f3 }`.
+  /// 6) `finalize_set_data_sgx(...)` enforces:
+  ///    - Caller key is allowed
+  ///    - Oracle is unpaused
+  ///    - Report unique_id matches stored `sgx_unique_id`
+  ///    - Historical write at `timestamped_hash`
+  ///    - Latest write at `request_hash` only if timestamp is newer
   async transition set_data_sgx(
     public report_data: ReportData,
     public report: Report,
     public sig: signature,
     public pub_key: address
   ) -> Future {
+    assert_eq(report_data.c0.f4, VALID_HTTP_STATUS);
     verify_sgx_report(report_data, report, sig, pub_key);
 
     let request_hash: u128 = get_request_hash(report_data);
@@ -358,6 +494,8 @@ program vlink_oracle_v0001.aleo {
     let pub_key_allowed: bool = Mapping::get_or_use(allowed_keys, pub_key, false);
     assert(pub_key_allowed);
 
+    assert(Mapping::get(status, STATUS_INDEX) == UNPAUSED_VALUE); // oracle must be unpaused
+
     // verify unique id from the TEE report
     let unique_id: UniqueID = Mapping::get(sgx_unique_id, 0u8);
     assert_eq(unique_id.chunk_1, report_unique_id_1);
@@ -373,6 +511,26 @@ program vlink_oracle_v0001.aleo {
     }
   }
 
+
+  /// Stores Nitro-attested data after full verification and PCR equality,
+  /// updating both a historical record keyed by a timestamped hash and the
+  /// latest value keyed by a stable `request_hash`.
+  ///
+  /// Pipeline:
+  /// 1) Parse `data_hash_from_report` from `report.c8` using
+  ///    `select_chunk(..., data_position.block_index)` and `extract_value(...)`.
+  /// 2) Require HTTP status OK in `report_data.c0.f4 == 200`.
+  /// 3) `verify_nitro_report(report_data, report, sig, pub_key, data_hash_from_report)`.
+  /// 4) Compute `request_hash` and `timestamped_hash` as in SGX flow.
+  /// 5) Build `AttestedData` from `report_data.c0.f2` and `c0.f3`.
+  /// 6) Extract PCR0, PCR1, PCR2 from `report.c0` using their respective
+  ///    `PositionData` and reconstruct 48-byte values as three u128 chunks each.
+  /// 7) `finalize_set_data_nitro(...)` enforces:
+  ///    - Caller key is allowed
+  ///    - Oracle is unpaused
+  ///    - Extracted PCRs equal stored `nitro_pcr_values`
+  ///    - Historical write at `timestamped_hash`
+  ///    - Latest write at `request_hash` only if timestamp is newer
   async transition set_data_nitro(
     public report_data: ReportData,
     public report: Report,
@@ -386,6 +544,7 @@ program vlink_oracle_v0001.aleo {
     let hash_blocks: (u128, u128, u128, u128) = select_chunk(report.c8, data_position.block_index);
     let data_hash_from_report: u128 = extract_value(hash_blocks.0, hash_blocks.1, data_position);
 
+    assert_eq(report_data.c0.f4, VALID_HTTP_STATUS);
     verify_nitro_report(report_data, report, sig, pub_key, data_hash_from_report);
 
     let request_hash: u128 = get_request_hash(report_data);
@@ -447,6 +606,8 @@ program vlink_oracle_v0001.aleo {
   ) {
     let pub_key_allowed: bool = Mapping::get_or_use(allowed_keys, pub_key, false);
     assert(pub_key_allowed);
+
+    assert(Mapping::get(status, STATUS_INDEX) == UNPAUSED_VALUE); // oracle must be unpaused
 
     let pcr_values: PcrValues = Mapping::get(nitro_pcr_values, 0u8);
     assert_eq(pcr_values, report_pcr_values);
@@ -520,4 +681,27 @@ program vlink_oracle_v0001.aleo {
     c6: DataChunk,
     c7: DataChunk
   }
+
+
+  async transition update_oracle_data  (public is_sgx_attested_data: bool, public timestamped_hash: u128, public attested_data: AttestedData) -> Future {
+      return finalize_update_oracle_data(self.caller, is_sgx_attested_data, timestamped_hash, attested_data);
+  }
+
+  async function finalize_update_oracle_data(public from: address, public is_sgx_attested_data: bool, public timestamped_hash: u128, public attested_data: AttestedData) {
+    let current_owner: address = Mapping::get(admin, OWNER_INDEX);
+    assert_eq(from, current_owner);
+
+    if (is_sgx_attested_data) {
+      assert(Mapping::contains(sgx_attested_data, timestamped_hash));
+      Mapping::set(sgx_attested_data, timestamped_hash, attested_data);
+    } else {  
+      assert(Mapping::contains(nitro_attested_data, timestamped_hash));
+      Mapping::set(nitro_attested_data, timestamped_hash, attested_data);
+    }
+
+
+  }
+
+
+
 }
