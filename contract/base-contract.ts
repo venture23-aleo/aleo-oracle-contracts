@@ -1,17 +1,16 @@
-import { PrivateKey } from '@provablehq/sdk';
+// @ts-nocheck
+import { PrivateKey, TransactionModel } from '@provablehq/sdk';
 import {
   ContractConfig,
   snarkDeploy,
   checkDeployment,
   CreateExecutionContext,
-  TransactionResponse,
-  ExecutionContext
+  TransactionResponse
 } from '@doko-js/core';
+import { to_address } from 'aleo-program-to-address';
 import networkConfig from '../aleo-config';
-import { to_address } from '@doko-js/wasm';
 
 export class BaseContract {
-  // @ts-expect-error Initialized at constructor
   public config: ContractConfig = {};
   public ctx: ExecutionContext;
 
@@ -25,7 +24,8 @@ export class BaseContract {
 
     if (!this.config.networkName)
       this.config.networkName = networkConfig.defaultNetwork;
-
+    if (!this.config.networkMode)
+      this.config.networkMode = networkConfig.networkMode;
     const networkName = this.config.networkName;
     if (networkName) {
       if (!networkConfig?.networks[networkName])
@@ -35,7 +35,8 @@ export class BaseContract {
 
       this.config = {
         ...this.config,
-        network: networkConfig.networks[networkName]
+        network: networkConfig.networks[networkName],
+        isDevnet: networkConfig.devnet || false
       };
     }
 
@@ -50,9 +51,9 @@ export class BaseContract {
     return checkDeployment(endpoint);
   }
 
-  /**
-   * @deprecated Use transaction receipt to wait.
-   */
+  /** 
+    * @deprecated Use transaction receipt to wait.
+  */
 
   async wait<T extends TransactionResponse = TransactionResponse>(
     transaction: T
@@ -69,12 +70,13 @@ export class BaseContract {
   }
 
   address(): string {
-    return to_address(`${this.config.appName}.aleo`, this.config.networkName);
+    return to_address(`${this.config.appName}.aleo`);
   }
 
   // TODO: handle properly
   getAccounts(): string[] {
     const accounts = this.config.network.accounts.map((pvtKey) => {
+      console.log(pvtKey);
       return PrivateKey.from_string(pvtKey).to_address().to_string();
     });
     return accounts;

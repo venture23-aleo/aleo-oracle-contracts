@@ -4,6 +4,7 @@ dotenv.config();
 export default {
   accounts: [process.env.ALEO_PRIVATE_KEY],
   mode: 'execute',
+  devnet: false,
   mainnet: {},
   networks: {
     // testnet: {
@@ -16,7 +17,7 @@ export default {
     //   priorityFee: 0.01
     // },
     testnet: {
-      endpoint: 'http://localhost:3030',
+      endpoint: 'https://api.explorer.provable.com/v1',
       accounts: [
         process.env.ALEO_PRIVATE_KEY,
       ],

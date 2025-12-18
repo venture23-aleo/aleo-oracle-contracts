@@ -1,16 +1,16 @@
 import { ExecutionMode } from "@doko-js/core";
 
-import { Veru_oracle_v2Contract } from "../../artifacts/js/veru_oracle_v2";
-import { Veru_oracle_council_v2Contract } from "../../artifacts/js/veru_oracle_council_v2";
-import { Veru_oracle_council_imp_v2Contract } from "../../artifacts/js/veru_oracle_council_imp_v2";
-import { Veru_oracle_checksum_v2Contract } from "../../artifacts/js/veru_oracle_checksum_v2";
+import { Veru_oracle_data_v3Contract } from "../../artifacts/js/veru_oracle_data_v3";
+import { Veru_oracle_council_v3Contract } from "../../artifacts/js/veru_oracle_council_v3";
+import { Veru_oracle_council_imp_v3Contract } from "../../artifacts/js/veru_oracle_council_imp_v3";
+import { Veru_oracle_checksum_v3Contract } from "../../artifacts/js/veru_oracle_checksum_v3";
 
 const mode = ExecutionMode.SnarkExecute;
 
-const oracleDeploymentChecksum = new Veru_oracle_checksum_v2Contract({mode: mode});
-const oracle = new Veru_oracle_v2Contract({mode: mode});
-const council = new Veru_oracle_council_v2Contract({mode: mode});
-const councilImple = new Veru_oracle_council_imp_v2Contract({mode: mode});
+const oracleDeploymentChecksum = new Veru_oracle_checksum_v3Contract({mode: mode});
+const oracle = new Veru_oracle_data_v3Contract({mode: mode});
+const council = new Veru_oracle_council_v3Contract({mode: mode});
+const councilImple = new Veru_oracle_council_imp_v3Contract({mode: mode});
 
 
 const intialize = async (initialCouncilList: string[], initialCouncilThresholdData: number) => {
@@ -32,11 +32,11 @@ const intialize = async (initialCouncilList: string[], initialCouncilThresholdDa
 }
 
 
-const council1 = "aleo1fg8y0ax9g0yhahrknngzwxkpcf7ejy3mm6cent4mmtwew5ueps8s6jzl27";
-const council2 = "aleo1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq3ljyzc";
-const council3 = "aleo1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq3ljyzc";
-const council4 = "aleo1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq3ljyzc";
-const council5 = "aleo1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq3ljyzc";
+  const council1 = "aleo1fg8y0ax9g0yhahrknngzwxkpcf7ejy3mm6cent4mmtwew5ueps8s6jzl27";
+  const council2 = "aleo1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq3ljyzc";
+  const council3 = "aleo1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq3ljyzc";
+  const council4 = "aleo1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq3ljyzc";
+  const council5 = "aleo1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq3ljyzc";
 const councilThreshold = 1;
 intialize([council1, council2, council3, council4, council5], councilThreshold);
 

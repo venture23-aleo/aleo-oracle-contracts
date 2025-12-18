@@ -1,8 +1,8 @@
 import { ExecutionMode } from "@doko-js/core";
-import { Veru_oracle_v2Contract } from "../artifacts/js/veru_oracle_v2";
+import { Veru_oracle_data_v3Contract } from "../artifacts/js/veru_oracle_data_v3";
 
 
-const oracle = new Veru_oracle_v2Contract({mode: ExecutionMode.SnarkExecute});
+const oracle = new Veru_oracle_data_v3Contract({mode: ExecutionMode.SnarkExecute});
 
 export const setAllow = async (allowed_address: string) => {
 

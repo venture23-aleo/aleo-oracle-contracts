@@ -4,17 +4,17 @@ import { getProposalStatus, validateExecution, validateProposer, validateVote } 
 
 import { getVotersWithYesVotes, padWithZeroAddress } from "../../../utils/voters";
 import { ExecutionMode } from "@doko-js/core";
-import { Veru_oracle_council_imp_v2Contract } from "../../../artifacts/js/veru_oracle_council_imp_v2";
-import { Veru_oracle_council_v2Contract } from "../../../artifacts/js/veru_oracle_council_v2";
+import { Veru_oracle_council_imp_v3Contract } from "../../../artifacts/js/veru_oracle_council_imp_v3";
+import { Veru_oracle_council_v3Contract } from "../../../artifacts/js/veru_oracle_council_v3";
 import { COUNCIL_TOTAL_PROPOSALS_INDEX, SUPPORTED_THRESHOLD, TAG_TRANSFER_OWNERSHIP } from "../../../utils/constants";
-import { TransferOwnership } from "../../../artifacts/js/types/veru_oracle_council_imp_v2";
-import { getTransferOwnershipLeo } from "../../../artifacts/js/js2leo/veru_oracle_council_imp_v2";
-import { ExternalProposal } from "../../../artifacts/js/types/veru_oracle_council_v2";
-import { getExternalProposalLeo } from "../../../artifacts/js/js2leo/veru_oracle_council_v2";
+import { TransferOwnership } from "../../../artifacts/js/types/veru_oracle_council_imp_v3";
+import { getTransferOwnershipLeo } from "../../../artifacts/js/js2leo/veru_oracle_council_imp_v3";
+import { ExternalProposal } from "../../../artifacts/js/types/veru_oracle_council_v3";
+import { getExternalProposalLeo } from "../../../artifacts/js/js2leo/veru_oracle_council_v3";
 
 const mode = ExecutionMode.SnarkExecute;
-const council = new Veru_oracle_council_v2Contract({ mode, priorityFee: 10_000 });
-const councilImpl = new Veru_oracle_council_imp_v2Contract({ mode, priorityFee: 10_000 });
+const council = new Veru_oracle_council_v3Contract({ mode, priorityFee: 10_000 });
+const councilImpl = new Veru_oracle_council_imp_v3Contract({ mode, priorityFee: 10_000 });
 
 
 export const proposeTransferOwnership = async (newOwner: string): Promise<number> => {
@@ -105,7 +105,7 @@ export const execTransferOwnership = async (proposalId: number, newOwner: string
 
   const voters = padWithZeroAddress(await getVotersWithYesVotes(ExternalProposalHash), SUPPORTED_THRESHOLD);
   console.log(voters)
-  const transferOwnerShipTx = await councilImpl.transfer_ownership(
+  const transferOwnerShipTx = await councilImpl.oracle_transfer_ownership(
     transferOwnership.id,
     transferOwnership.new_owner,
     voters

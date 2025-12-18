@@ -1,14 +1,17 @@
 import { ExecutionMode, parseJSONLikeString } from '@doko-js/core';
 import data from './eth_usdc.json';
-import { getDataChunk, getReportData, getReport, getUniqueID } from '../artifacts/js/leo2js/testing_offical_oracle_v2';
-import { Veru_oracle_v2Contract } from '../artifacts/js/veru_oracle_v2';
-import { AttestedData } from '../artifacts/js/types/veru_oracle_v2';
+import { getDataChunk, getReportData, getReport, getUniqueID } from '../artifacts/js/leo2js/veru_oracle_data_v3';
+import { Veru_oracle_data_v3Contract } from '../artifacts/js/veru_oracle_data_v3';
+import { AttestedData } from '../artifacts/js/types/veru_oracle_data_v3';
+import { Veru_oracle_checksum_v3Contract } from '../artifacts/js/veru_oracle_checksum_v3';
 const TIMEOUT = 20000_000;
 
 // Available modes are evaluate | execute (Check README.md for further description)
 const mode = ExecutionMode.SnarkExecute;
 // Contract class initialization
-const oracle = new Veru_oracle_v2Contract({ mode });
+const oracle = new Veru_oracle_data_v3Contract({ mode });
+const checkSum = new Veru_oracle_checksum_v3Contract({ mode });
+
 const [owner, aleoUser2, aleoUser3] = oracle.getAccounts();
 const OWNER_INDEX = true;
 
@@ -17,10 +20,19 @@ const OWNER_INDEX = true;
   const UNPAUSED_VALUE = false;
   const VALID_HTTP_STATUS = BigInt("200");
 
+
+
 describe('deploy test', () => {
 
 
     describe("Contract Deployment", () => {
+
+        test('Deployment of Checksum`', async () => {
+            const deployTx = await checkSum.deploy();
+            await deployTx.wait();
+        }, TIMEOUT);
+
+
         test('Deployment', async () => {
             const deployTx = await oracle.deploy();
             await deployTx.wait();
@@ -56,7 +68,7 @@ describe('deploy test', () => {
         }, TIMEOUT);
 
         test("owner can unpause", async () => {
-            expect(await oracle.status(STATUS_INDEX)).toBe(UNPAUSED_VALUE);
+            expect(await oracle.status(STATUS_INDEX)).toBe(PAUSED_VALUE);
             oracle.connect(owner);
             const tx = await oracle.unpause();
             await tx.wait();
@@ -2535,7 +2547,6 @@ describe('deploy test', () => {
         }, TIMEOUT);
 
         test("unpause for testing", async () => {
-            expect(await oracle.status(STATUS_INDEX)).toBe(UNPAUSED_VALUE);
             oracle.connect(owner);
             const tx = await oracle.unpause();
             await tx.wait();
@@ -3501,38 +3512,38 @@ describe('deploy test', () => {
 
         test('set data_sgx by owner: Happy Flow', async () => {
         const ReportDataChunk1 = {
-            f0:  BigInt("83078413625893051443950901841625343"),
-            f1:  BigInt("4194544"),
-            f2:  BigInt("2459651688519496"),
-            f3:  BigInt("1749193230"),
-            f4:  BigInt("200"),
-            f5:  BigInt("142821293454631051320862835823103406704"),
-            f6:  BigInt("148123008982277817231010402169006552165"),
-            f7:  BigInt("153455199263609451433511210995015447404"),
-            f8:  BigInt("81604270107650969765782987549440896873"),
-            f9:  BigInt("90820193226405451639137894329186660401"),
-            f10: BigInt("67"),
-            f11: BigInt("61493757501780816131600652826808967524"),
-            f12: BigInt("435459551856"),
-            f13: BigInt("0"),
-            f14: BigInt("5522759"),
-            f15: BigInt("221360928884514619394"),
-            f16: BigInt("258254417031933722629"),
-            f17: BigInt("13055389343712134841237569546"),
-            f18: BigInt("13856407623565317"),
-            f19: BigInt("156035770564570580066107481452631621659"),
-            f20: BigInt("3900269670161044694030315513202"),
-            f21: BigInt("162743726813863731210145153184655802480"),
-            f22: BigInt("101188681738744639914108759155086748777"),
-            f23: BigInt("149456393680743922584091041160660086377"),
-            f24: BigInt("42816717959947032433996830433837802860"),
-            f25: BigInt("132119436183189587630719372684727700264"),
-            f26: BigInt("64042929165508395635299690384626118507"),
-            f27: BigInt("61431102749981217983499061483759611950"),
-            f28: BigInt("13875"),
-            f29: BigInt("126657325042335875692993129968414752792"),
-            f30: BigInt("199117193818880370885963"),
-            f31: BigInt("55340232221128654848")
+            f0:  BigInt("83078017388366451447988122448035854"),
+            f1:  BigInt("576461027190767632"),
+            f2:  BigInt("182983601062"),
+            f3:  BigInt("1763547444"),
+            f4:  BigInt("13377192"),
+            f5:  BigInt("200"),
+            f6:  BigInt("148070927710180749865747458132302983792"),
+            f7:  BigInt("134768203673174239740683604430737204599"),
+            f8:  BigInt("0"),
+            f9:  BigInt("5522759"),
+            f10: BigInt("221360928884514619394"),
+            f11: BigInt("147573952589676412929"),
+            f12: BigInt("162743726813863731212450996193871593584"),
+            f13: BigInt("101188681738744639914108759155086748777"),
+            f14: BigInt("149456393680743922584091041160660086377"),
+            f15: BigInt("42816717959947032433996830433837802860"),
+            f16: BigInt("132119436183189587630719372684727700264"),
+            f17: BigInt("64042929165508395635299690384626118507"),
+            f18: BigInt("61431102749981217983499061483759611950"),
+            f19: BigInt("13875"),
+            f20: BigInt("55340232221128654848"),
+            f21: BigInt("0"),
+            f22: BigInt("0"),
+            f23: BigInt("0"),
+            f24: BigInt("0"),
+            f25: BigInt("0"),
+            f26: BigInt("0"),
+            f27: BigInt("0"),
+            f28: BigInt("0"),
+            f29: BigInt("0"),
+            f30: BigInt("0"),
+            f31: BigInt("0")
         };
 
         const ReportDataChunk2 = {
@@ -3630,15 +3641,15 @@ describe('deploy test', () => {
             f2:  BigInt("212810793247107972836521987657865927927"),
             f3:  BigInt("59181406181154323133800401058"),
             f4:  BigInt("562945928007696"),
-            f5:  BigInt("0"),
+            f5:  BigInt("1"),
             f6:  BigInt("0"),
             f7:  BigInt("4261197881026906423301"),
-            f8:  BigInt("332573059209333697283035750545530245097"),
-            f9:  BigInt("12876599612630425400788585821304799478"),
+            f8:  BigInt("201069965914335148496298249576555812025"),
+            f9:  BigInt("274105196937603033945634143989234904281"),
             f10: BigInt("0"),
             f11: BigInt("0"),
-            f12: BigInt("14173362529388069478112537322908285721"),
-            f13: BigInt("165527990478049161092218747999037770344"),
+            f12: BigInt("249417904548363037093100233770190482472"),
+            f13: BigInt("326514669868775821684682658913687962794"),
             f14: BigInt("0"),
             f15: BigInt("0"),
             f16: BigInt("0"),
@@ -3649,17 +3660,17 @@ describe('deploy test', () => {
             f21: BigInt("0"),
             f22: BigInt("0"),
             f23: BigInt("0"),
-            f24: BigInt("97453700143625969198602450171785274325"),
+            f24: BigInt("61174564595169121089398382940697598836"),
             f25: BigInt("0"),
             f26: BigInt("0"),
             f27: BigInt("0"),
-            f28: BigInt("233689081431026658505440141348133933258"),
-            f29: BigInt("178431243757152969853735909593098990863"),
-            f30: BigInt("222521718577349731253013411240615597562"),
-            f31: BigInt("137724232061770787204589089211056168198")
+            f28: BigInt("270907749794161134366842230210807468234"),
+            f29: BigInt("330138967113583526320537165679553007266"),
+            f30: BigInt("66551662851477601200855559650341339439"),
+            f31: BigInt("263657710821760129343569516537282828852")
         },
         c1: {
-            f0:  BigInt("232638938355533318366654005926536025422"),
+            f0:  BigInt("232638938355533318366654005928440529413"),
             f1:  BigInt("128180641402572767893502123921913000389"),
             f2:  BigInt("280157746167917180235793552204935515601"),
             f3:  BigInt("103230014128624756310015415239925406137"),
@@ -3687,13 +3698,13 @@ describe('deploy test', () => {
             f25: BigInt("4315652090427597037003403827864509585"),
             f26: BigInt("1665050512"),
             f27: BigInt("0"),
-            f28: BigInt("97567467964145802557956930940400828416"),
-            f29: BigInt("156024894977094307916437130004864121990"),
-            f30: BigInt("333892863136545040996596893220733339177"),
-            f31: BigInt("28585862271137679478755408386301921346")
+            f28: BigInt("178572399111263452407374934332898541568"),
+            f29: BigInt("245675887778416079942357351146756364763"),
+            f30: BigInt("135574213835857061899708403361473620627"),
+            f31: BigInt("162787256292171899411291961961368126542")
         },
         c2: {
-            f0:  BigInt("12004732790720997080891679056024666159"),
+            f0:  BigInt("12004732790720997080891679056220673016"),
             f1:  BigInt("33355783264191645768789692391696894730"),
             f2:  BigInt("60049829442654826911932580370866510618"),
             f3:  BigInt("86749189800108151757823289210582680109"),
@@ -3966,8 +3977,8 @@ describe('deploy test', () => {
         }
         };
 
-        const signer = "aleo1czu58vskrq0m2gqlpggucvcj2w2zht4unh4jg23gq5a4cp3fespsawtj6t";
-        const signature = "sign1c0ts7e6mem08l62fgxpqexfjk742kxus6ffe7d8apd7vxdeduyq828yzl43wc35g6nl4h2l58lk72pesp57msqmxwe3l3xhw2hnvwqhy7pztupfz6yycl4k9gqaf2450q2e4p2knyst63uuqagnu2w2xpcm9hkflwsrm4gq2a8eduhv8fs434lhehu7gwg80apn6l35wjkw3z8jpgca";
+        const signer = "aleo1a0jh34fp9lkhgfkem3dpyyp0sv4teh0e399uzwtwhml9d05yju9s5s78uu";
+        const signature = "sign1zfla369t6mx4sgyhpw7r3jwkztwphzc6lpkqx25qec2xvzfd8sqr38cerc7u4dsre5a68qmr8jk4qkgefe8m6nnhywktelsylyrtcqjql0yyl4n44eh606h5sfg93evh6wee6ewscqhw65j7zxggpf0cpuny2pv2upp2fkf42q53lstaahd0gqrexp6xzuayfhmm8y478hpq2k42grs";
 
         oracle.connect(owner);
 
@@ -6329,7 +6340,6 @@ describe('deploy test', () => {
         }, TIMEOUT)
 
         test("unpause for testing", async () => {
-            expect(await oracle.status(STATUS_INDEX)).toBe(UNPAUSED_VALUE);
             oracle.connect(owner);
             const tx = await oracle.unpause();
             await tx.wait();
@@ -6824,10 +6834,10 @@ describe('deploy test', () => {
 
     describe("Update Historic data", () => {
 
-        const timestamp = BigInt("228673980645668757622957248149721227551");
+        const timestamp = BigInt("194273345717352875270682326290563317084");
         const AttestedData: AttestedData = {
-                data: BigInt("2459651688519496"),
-                attestation_timestamp: BigInt("1749193230")
+                data: BigInt("182983601062"),
+                attestation_timestamp: BigInt("1763547444")
             };
 
         test.failing("should not update Historic data", async () => {

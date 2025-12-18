@@ -19,6 +19,8 @@
   },
   "dependencies": {
     "@provablehq/sdk": "^0.6.9",
+    "aleo-hasher": "^0.1.2",
+    "aleo-program-to-address": "^0.1.0",
     "dotenv": "^16.5.0",
     "zod": "^3.25.46"
   },

@@ -1,4 +1,4 @@
-program veru_oracle_checksum_v2.aleo {
+program veru_oracle_checksum_v3.aleo {
 
     mapping approved_checksums: address => [u8; 32];
     mapping admin: bool => address;

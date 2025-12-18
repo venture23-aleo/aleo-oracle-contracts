@@ -1,4 +1,4 @@
-import { Veru_oracle_council_v2Contract } from "../../artifacts/js/veru_oracle_council_v2";
+import { Veru_oracle_council_v3Contract } from "../../artifacts/js/veru_oracle_council_v3";
 import { hashStruct } from "../../utils/hash";
 
 import { COUNCIL_TOTAL_PROPOSALS_INDEX, SUPPORTED_THRESHOLD, TAG_REMOVE_MEMBER } from "../../utils/constants";
@@ -6,13 +6,13 @@ import { getProposalStatus, validateExecution, validateProposer, validateVote } 
 
 import { getVotersWithYesVotes, padWithZeroAddress } from "../../utils/voters";
 import { ExecutionMode } from "@doko-js/core";
-import { RemoveMember } from "../../artifacts/js/types/veru_oracle_council_v2";
-import { getRemoveMemberLeo } from "../../artifacts/js/js2leo/veru_oracle_council_v2";
+import { RemoveMember } from "../../artifacts/js/types/veru_oracle_council_v3";
+import { getRemoveMemberLeo } from "../../artifacts/js/js2leo/veru_oracle_council_v3";
 
 const mode = ExecutionMode.SnarkExecute;
 
 
-const council = new Veru_oracle_council_v2Contract({ mode, priorityFee: 10_000 });
+const council = new Veru_oracle_council_v3Contract({ mode, priorityFee: 10_000 });
 
 //////////////////////
 ///// Propose ////////

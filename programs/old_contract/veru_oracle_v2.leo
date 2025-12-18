@@ -1,9 +1,9 @@
-import veru_oracle_checksum_v2.aleo;
+import veru_oracle_checksum_v3.aleo;
 
-program veru_oracle_v2.aleo {
+program veru_oracle_data_v3.aleo {
 
     // upgrade through the checksum mapping in another program
-    @checksum(mapping="veru_oracle_checksum_v2.aleo/approved_checksums", key="veru_oracle_v2.aleo")
+    @checksum(mapping="veru_oracle_checksum_v3.aleo/approved_checksums", key="veru_oracle_data_v3.aleo")
     async constructor() {
         // The Leo compiler automatically generates the constructor logic.
     }
@@ -48,7 +48,7 @@ program veru_oracle_v2.aleo {
   }
 
   // initializer of a contract
-  const initializer: address = aleo1fg8y0ax9g0yhahrknngzwxkpcf7ejy3mm6cent4mmtwew5ueps8s6jzl27;
+  const initializer: address = aleo1rhgdu77hgyqd3xjj8ucu3jj9r2krwz6mnzyd80gncr5fxcwlh5rsvzp9px;
   const OWNER_INDEX: bool = true;
   const STATUS_INDEX: u8 = 0u8;
   const PAUSED_VALUE: bool = true;
@@ -77,6 +77,9 @@ program veru_oracle_v2.aleo {
   // hash of notarization request with timestamp => Attested_Data
   // or just hash of notarization request for the lastest stored data
   mapping nitro_attested_data: u128 => AttestedData;
+
+  // zero hash value
+  const ZERO_REPORT_DATA_HASH: u128 = 302058964107265739830707345800219864335u128;
 
 
   async transition initialize(public owner_address: address) -> Future {
@@ -314,60 +317,149 @@ program veru_oracle_v2.aleo {
   }
 
 
-  /// Computes a stable 128-bit request identifier from the subset of `report_data` that represents the notarization request context
-  function get_request_hash(report_data: ReportData) -> u128 {
-    let first_data_chunk: DataChunk = DataChunk {
-      f0: report_data.c0.f0,
-      f1: report_data.c0.f1,
+  // /// Computes a stable 128-bit request identifier from the subset of `report_data` that represents the notarization request context
+  // function get_request_hash(report_data: ReportData) -> u128 {
+  //   let first_data_chunk: DataChunk = DataChunk {
+  //     f0: report_data.c0.f0,
+  //     f1: report_data.c0.f1,
+  //     f2: 0u128,
+  //     f3: 0u128,
+  //     f4: report_data.c0.f4,
+  //     f5: report_data.c0.f5,
+  //     f6: report_data.c0.f6,
+  //     f7: report_data.c0.f7,
+  //     f8: report_data.c0.f8,
+  //     f9: report_data.c0.f9,
+  //     f10: report_data.c0.f10,
+  //     f11: report_data.c0.f11,
+  //     f12: report_data.c0.f12,
+  //     f13: report_data.c0.f13,
+  //     f14: report_data.c0.f14,
+  //     f15: report_data.c0.f15,
+  //     f16: report_data.c0.f16,
+  //     f17: report_data.c0.f17,
+  //     f18: report_data.c0.f18,
+  //     f19: report_data.c0.f19,
+  //     f20: report_data.c0.f20,
+  //     f21: report_data.c0.f21,
+  //     f22: report_data.c0.f22,
+  //     f23: report_data.c0.f23,
+  //     f24: report_data.c0.f24,
+  //     f25: report_data.c0.f25,
+  //     f26: report_data.c0.f26,
+  //     f27: report_data.c0.f27,
+  //     f28: report_data.c0.f28,
+  //     f29: report_data.c0.f29,
+  //     f30: report_data.c0.f30,
+  //     f31: report_data.c0.f31
+  //   };
+
+  //   let request_data: ReportData = ReportData {
+  //     c0: first_data_chunk,
+  //     c1: report_data.c1,
+  //     c2: report_data.c2,
+  //     c3: report_data.c3,
+  //     c4: report_data.c4,
+  //     c5: report_data.c5,
+  //     c6: report_data.c6,
+  //     c7: report_data.c7,
+  //     c8: report_data.c8,
+  //     c9: report_data.c9
+  //   };
+
+  //   let request_hash: u128 = Poseidon8::hash_to_u128(request_data);
+
+  //   return request_hash;
+  // }
+
+  function get_request_hash(report_data: DataChunk) -> u128 {
+    let report_data_chunk: DataChunk = DataChunk {
+      f0: report_data.f0,
+      f1: report_data.f1,
       f2: 0u128,
       f3: 0u128,
-      f4: report_data.c0.f4,
-      f5: report_data.c0.f5,
-      f6: report_data.c0.f6,
-      f7: report_data.c0.f7,
-      f8: report_data.c0.f8,
-      f9: report_data.c0.f9,
-      f10: report_data.c0.f10,
-      f11: report_data.c0.f11,
-      f12: report_data.c0.f12,
-      f13: report_data.c0.f13,
-      f14: report_data.c0.f14,
-      f15: report_data.c0.f15,
-      f16: report_data.c0.f16,
-      f17: report_data.c0.f17,
-      f18: report_data.c0.f18,
-      f19: report_data.c0.f19,
-      f20: report_data.c0.f20,
-      f21: report_data.c0.f21,
-      f22: report_data.c0.f22,
-      f23: report_data.c0.f23,
-      f24: report_data.c0.f24,
-      f25: report_data.c0.f25,
-      f26: report_data.c0.f26,
-      f27: report_data.c0.f27,
-      f28: report_data.c0.f28,
-      f29: report_data.c0.f29,
-      f30: report_data.c0.f30,
-      f31: report_data.c0.f31
+      f4: 0u128,
+      f5: report_data.f5,
+      f6: report_data.f6,
+      f7: report_data.f7,
+      f8: report_data.f8,
+      f9: report_data.f9,
+      f10: report_data.f10,
+      f11: report_data.f11,
+      f12: report_data.f12,
+      f13: report_data.f13,
+      f14: report_data.f14,
+      f15: report_data.f15,
+      f16: report_data.f16,
+      f17: report_data.f17,
+      f18: report_data.f18,
+      f19: report_data.f19,
+      f20: report_data.f20,
+      f21: report_data.f21,
+      f22: report_data.f22,
+      f23: report_data.f23,
+      f24: report_data.f24,
+      f25: report_data.f25,
+      f26: report_data.f26,
+      f27: report_data.f27,
+      f28: report_data.f28,
+      f29: report_data.f29,
+      f30: report_data.f30,
+      f31: report_data.f31
+    };
+
+    let null_data: DataChunk = DataChunk {
+      f0: 0u128,
+      f1: 0u128,
+      f2: 0u128,
+      f3: 0u128,
+      f4: 0u128,
+      f5: 0u128,
+      f6: 0u128,
+      f7: 0u128,
+      f8: 0u128,
+      f9: 0u128,
+      f10: 0u128,
+      f11: 0u128,
+      f12: 0u128,
+      f13: 0u128,
+      f14: 0u128,
+      f15: 0u128,
+      f16: 0u128,
+      f17: 0u128,
+      f18: 0u128,
+      f19: 0u128,
+      f20: 0u128,
+      f21: 0u128,
+      f22: 0u128,
+      f23: 0u128,
+      f24: 0u128,
+      f25: 0u128,
+      f26: 0u128,
+      f27: 0u128,
+      f28: 0u128,
+      f29: 0u128,
+      f30: 0u128,
+      f31: 0u128
     };
 
     let request_data: ReportData = ReportData {
-      c0: first_data_chunk,
-      c1: report_data.c1,
-      c2: report_data.c2,
-      c3: report_data.c3,
-      c4: report_data.c4,
-      c5: report_data.c5,
-      c6: report_data.c6,
-      c7: report_data.c7
+      c0: report_data_chunk,
+      c1: null_data,
+      c2: null_data,
+      c3: null_data,
+      c4: null_data,
+      c5: null_data,  
+      c6: null_data,
+      c7: null_data,
+      c8: null_data,
+      c9: null_data
     };
 
     let request_hash: u128 = Poseidon8::hash_to_u128(request_data);
 
     return request_hash;
   }
-
-
   /// Verifies an Intel SGX report and its signature against expected security properties,
   /// and that it binds to the provided `report_data`.
   ///
@@ -432,9 +524,6 @@ program veru_oracle_v2.aleo {
     let is_valid: bool = signature::verify(sig, pub_key, report_hash);
     assert(is_valid);
   }
-
-
-
   /// Stores SGX-attested data after full verification and identity match,
   /// updating both a historical record keyed by a timestamped hash and the
   /// latest value keyed by a stable `request_hash`.
@@ -457,27 +546,38 @@ program veru_oracle_v2.aleo {
     public sig: signature,
     public pub_key: address
   ) -> Future {
-    assert_eq(report_data.c0.f4, VALID_HTTP_STATUS);
+
     verify_sgx_report(report_data, report, sig, pub_key);
+    let report_datas: [DataChunk; 10] = [report_data.c0, report_data.c1, report_data.c2, report_data.c3, report_data.c4, report_data.c5, report_data.c6, report_data.c7, report_data.c8, report_data.c9];
 
-    let request_hash: u128 = get_request_hash(report_data);
+    let request_hashes: [u128; 10] = [0u128; 10];
+    let timestamped_hashes: [u128; 10] = [0u128; 10];
+    let attested_datas: [AttestedData; 10] = [AttestedData { data: 0u128, attestation_timestamp: 0u128 }; 10];
+    let unique_ids_1: [u128; 10] = [0u128; 10];
+    let unique_ids_2: [u128; 10] = [0u128; 10];
 
-    let struct_to_hash: TimestampedHash = TimestampedHash {
-      request_hash: request_hash,
-      attestation_timestamp: report_data.c0.f3
-    };
+    for i:u8 in 0u8..10u8 {
+        request_hashes[i] = get_request_hash(report_datas[i]);
 
-    let timestamped_hash: u128 = Poseidon8::hash_to_u128(struct_to_hash);
+        if request_hashes[i] != ZERO_REPORT_DATA_HASH {
+            assert_eq(report_datas[i].f4, VALID_HTTP_STATUS);
+        }
+        
+        timestamped_hashes[i] = Poseidon8::hash_to_u128(TimestampedHash {
+                          request_hash: request_hashes[i],
+                          attestation_timestamp: report_datas[i].f3
+        });
 
-    let attested_data: AttestedData = AttestedData {
-      data: report_data.c0.f2,
-      attestation_timestamp: report_data.c0.f3
-    };
+        attested_datas[i] = AttestedData {
+            data: report_datas[i].f2,
+            attestation_timestamp: report_datas[i].f3
+        };
+    }
 
     return finalize_set_data_sgx(
-      request_hash,
-      timestamped_hash,
-      attested_data,
+      request_hashes,
+      timestamped_hashes,
+      attested_datas,
       report.c0.f8,
       report.c0.f9,
       pub_key
@@ -485,9 +585,9 @@ program veru_oracle_v2.aleo {
   }
 
   async function finalize_set_data_sgx(
-    public request_hash: u128,
-    public timestamped_hash: u128,
-    public attested_data: AttestedData,
+    public request_hash: [u128; 10],
+    public timestamped_hash: [u128; 10],
+    public attested_data: [AttestedData; 10],
     public report_unique_id_1: u128,
     public report_unique_id_2: u128,
     public pub_key: address
@@ -502,15 +602,22 @@ program veru_oracle_v2.aleo {
     assert_eq(unique_id.chunk_1, report_unique_id_1);
     assert_eq(unique_id.chunk_2, report_unique_id_2);
 
-    Mapping::set(sgx_attested_data, timestamped_hash, attested_data);
+    for i: u8 in 0u8..5u8 {
+      if (request_hash[i] != ZERO_REPORT_DATA_HASH) {
+          Mapping::set(sgx_attested_data, timestamped_hash[i], attested_data[i]);
+      }
+          // replace latest data if current data is newer
+          let latest_data: AttestedData = Mapping::get_or_use(sgx_attested_data, request_hash[i], AttestedData { data: 0u128, attestation_timestamp: 0u128 });
 
-    // replace latest data if current data is newer
-    let latest_data: AttestedData = Mapping::get_or_use(sgx_attested_data, request_hash, AttestedData { data: 0u128, attestation_timestamp: 0u128 });
-
-    if (attested_data.attestation_timestamp > latest_data.attestation_timestamp) {
-      Mapping::set(sgx_attested_data, request_hash, attested_data);
+          if (attested_data[i].attestation_timestamp > latest_data.attestation_timestamp) {
+            Mapping::set(sgx_attested_data, request_hash[i], attested_data[i]);
+          }
     }
+
+    
   }
+
+
 
 
   /// Stores Nitro-attested data after full verification and PCR equality,
@@ -532,96 +639,96 @@ program veru_oracle_v2.aleo {
   ///    - Extracted PCRs equal stored `nitro_pcr_values`
   ///    - Historical write at `timestamped_hash`
   ///    - Latest write at `request_hash` only if timestamp is newer
-  async transition set_data_nitro(
-    public report_data: ReportData,
-    public report: Report,
-    public sig: signature,
-    public pub_key: address,
-    public data_position: PositionData,
-    public pcr_0_position: PositionData,
-    public pcr_1_position: PositionData,
-    public pcr_2_position: PositionData
-  ) -> Future {
-    let hash_blocks: (u128, u128, u128, u128) = select_chunk(report.c8, data_position.block_index);
-    let data_hash_from_report: u128 = extract_value(hash_blocks.0, hash_blocks.1, data_position);
+  // async transition set_data_nitro(
+  //   public report_data: ReportData,
+  //   public report: Report,
+  //   public sig: signature,
+  //   public pub_key: address,
+  //   public data_position: PositionData,
+  //   public pcr_0_position: PositionData,
+  //   public pcr_1_position: PositionData,
+  //   public pcr_2_position: PositionData
+  // ) -> Future {
+  //   let hash_blocks: (u128, u128, u128, u128) = select_chunk(report.c8, data_position.block_index);
+  //   let data_hash_from_report: u128 = extract_value(hash_blocks.0, hash_blocks.1, data_position);
 
-    assert_eq(report_data.c0.f4, VALID_HTTP_STATUS);
-    verify_nitro_report(report_data, report, sig, pub_key, data_hash_from_report);
+  //   assert_eq(report_data.c0.f5, VALID_HTTP_STATUS);
+  //   verify_nitro_report(report_data, report, sig, pub_key, data_hash_from_report);
 
-    let request_hash: u128 = get_request_hash(report_data);
+  //   let request_hash: u128 = get_request_hash(report_data);
 
-    let struct_to_hash: TimestampedHash = TimestampedHash {
-      request_hash: request_hash,
-      attestation_timestamp: report_data.c0.f3
-    };
+  //   let struct_to_hash: TimestampedHash = TimestampedHash {
+  //     request_hash: request_hash,
+  //     attestation_timestamp: report_data.c0.f3
+  //   };
 
-    let timestamped_hash: u128 = Poseidon8::hash_to_u128(struct_to_hash);
+  //   let timestamped_hash: u128 = Poseidon8::hash_to_u128(struct_to_hash);
 
-    let attested_data: AttestedData = AttestedData {
-      data: report_data.c0.f2,
-      attestation_timestamp: report_data.c0.f3
-    };
+  //   let attested_data: AttestedData = AttestedData {
+  //     data: report_data.c0.f2,
+  //     attestation_timestamp: report_data.c0.f3
+  //   };
 
-    let pcr_0_block: (u128, u128, u128, u128) = select_chunk(report.c0, pcr_0_position.block_index);
-    let pcr_0_chunk_1: u128 = extract_value(pcr_0_block.0, pcr_0_block.1, pcr_0_position);
-    let pcr_0_chunk_2: u128 = extract_value(pcr_0_block.1, pcr_0_block.2, pcr_0_position);
-    let pcr_0_chunk_3: u128 = extract_value(pcr_0_block.2, pcr_0_block.3, pcr_0_position);
+  //   let pcr_0_block: (u128, u128, u128, u128) = select_chunk(report.c0, pcr_0_position.block_index);
+  //   let pcr_0_chunk_1: u128 = extract_value(pcr_0_block.0, pcr_0_block.1, pcr_0_position);
+  //   let pcr_0_chunk_2: u128 = extract_value(pcr_0_block.1, pcr_0_block.2, pcr_0_position);
+  //   let pcr_0_chunk_3: u128 = extract_value(pcr_0_block.2, pcr_0_block.3, pcr_0_position);
 
-    let pcr_1_block: (u128, u128, u128, u128) = select_chunk(report.c0, pcr_1_position.block_index);
-    let pcr_1_chunk_1: u128 = extract_value(pcr_1_block.0, pcr_1_block.1, pcr_1_position);
-    let pcr_1_chunk_2: u128 = extract_value(pcr_1_block.1, pcr_1_block.2, pcr_1_position);
-    let pcr_1_chunk_3: u128 = extract_value(pcr_1_block.2, pcr_1_block.3, pcr_1_position);
+  //   let pcr_1_block: (u128, u128, u128, u128) = select_chunk(report.c0, pcr_1_position.block_index);
+  //   let pcr_1_chunk_1: u128 = extract_value(pcr_1_block.0, pcr_1_block.1, pcr_1_position);
+  //   let pcr_1_chunk_2: u128 = extract_value(pcr_1_block.1, pcr_1_block.2, pcr_1_position);
+  //   let pcr_1_chunk_3: u128 = extract_value(pcr_1_block.2, pcr_1_block.3, pcr_1_position);
 
-    let pcr_2_block: (u128, u128, u128, u128) = select_chunk(report.c0, pcr_2_position.block_index);
-    let pcr_2_chunk_1: u128 = extract_value(pcr_2_block.0, pcr_2_block.1, pcr_2_position);
-    let pcr_2_chunk_2: u128 = extract_value(pcr_2_block.1, pcr_2_block.2, pcr_2_position);
-    let pcr_2_chunk_3: u128 = extract_value(pcr_2_block.2, pcr_2_block.3, pcr_2_position);
+  //   let pcr_2_block: (u128, u128, u128, u128) = select_chunk(report.c0, pcr_2_position.block_index);
+  //   let pcr_2_chunk_1: u128 = extract_value(pcr_2_block.0, pcr_2_block.1, pcr_2_position);
+  //   let pcr_2_chunk_2: u128 = extract_value(pcr_2_block.1, pcr_2_block.2, pcr_2_position);
+  //   let pcr_2_chunk_3: u128 = extract_value(pcr_2_block.2, pcr_2_block.3, pcr_2_position);
 
-    let pcr_values: PcrValues = PcrValues {
-      pcr_0_chunk_1: pcr_0_chunk_1,
-      pcr_0_chunk_2: pcr_0_chunk_2,
-      pcr_0_chunk_3: pcr_0_chunk_3,
-      pcr_1_chunk_1: pcr_1_chunk_1,
-      pcr_1_chunk_2: pcr_1_chunk_2,
-      pcr_1_chunk_3: pcr_1_chunk_3,
-      pcr_2_chunk_1: pcr_2_chunk_1,
-      pcr_2_chunk_2: pcr_2_chunk_2,
-      pcr_2_chunk_3: pcr_2_chunk_3
-    };
+  //   let pcr_values: PcrValues = PcrValues {
+  //     pcr_0_chunk_1: pcr_0_chunk_1,
+  //     pcr_0_chunk_2: pcr_0_chunk_2,
+  //     pcr_0_chunk_3: pcr_0_chunk_3,
+  //     pcr_1_chunk_1: pcr_1_chunk_1,
+  //     pcr_1_chunk_2: pcr_1_chunk_2,
+  //     pcr_1_chunk_3: pcr_1_chunk_3,
+  //     pcr_2_chunk_1: pcr_2_chunk_1,
+  //     pcr_2_chunk_2: pcr_2_chunk_2,
+  //     pcr_2_chunk_3: pcr_2_chunk_3
+  //   };
 
-    return finalize_set_data_nitro(
-      request_hash,
-      timestamped_hash,
-      attested_data,
-      pcr_values,
-      pub_key
-    );
-  }
+  //   return finalize_set_data_nitro(
+  //     request_hash,
+  //     timestamped_hash,
+  //     attested_data,
+  //     pcr_values,
+  //     pub_key
+  //   );
+  // }
 
-  async function finalize_set_data_nitro(
-    public request_hash: u128,
-    public timestamped_hash: u128,
-    public attested_data: AttestedData,
-    public report_pcr_values: PcrValues,
-    public pub_key: address
-  ) {
-    let pub_key_allowed: bool = Mapping::get_or_use(allowed_keys, pub_key, false);
-    assert(pub_key_allowed);
+  // async function finalize_set_data_nitro(
+  //   public request_hash: u128,
+  //   public timestamped_hash: u128,
+  //   public attested_data: AttestedData,
+  //   public report_pcr_values: PcrValues,
+  //   public pub_key: address
+  // ) {
+  //   let pub_key_allowed: bool = Mapping::get_or_use(allowed_keys, pub_key, false);
+  //   assert(pub_key_allowed);
 
-    assert(Mapping::get(status, STATUS_INDEX) == UNPAUSED_VALUE); // oracle must be unpaused
+  //   assert(Mapping::get(status, STATUS_INDEX) == UNPAUSED_VALUE); // oracle must be unpaused
 
-    let pcr_values: PcrValues = Mapping::get(nitro_pcr_values, 0u8);
-    assert_eq(pcr_values, report_pcr_values);
+  //   let pcr_values: PcrValues = Mapping::get(nitro_pcr_values, 0u8);
+  //   assert_eq(pcr_values, report_pcr_values);
 
-    Mapping::set(nitro_attested_data, timestamped_hash, attested_data);
+  //   Mapping::set(nitro_attested_data, timestamped_hash, attested_data);
 
-    // replace latest data if current data is newer
-    let latest_data: AttestedData = Mapping::get_or_use(nitro_attested_data, request_hash, AttestedData { data: 0u128, attestation_timestamp: 0u128 });
+  //   // replace latest data if current data is newer
+  //   let latest_data: AttestedData = Mapping::get_or_use(nitro_attested_data, request_hash, AttestedData { data: 0u128, attestation_timestamp: 0u128 });
 
-    if (attested_data.attestation_timestamp > latest_data.attestation_timestamp) {
-      Mapping::set(nitro_attested_data, request_hash, attested_data);
-    }
-  }
+  //   if (attested_data.attestation_timestamp > latest_data.attestation_timestamp) {
+  //     Mapping::set(nitro_attested_data, request_hash, attested_data);
+  //   }
+  // }
 
   // a 512-byte data chunk
   struct DataChunk {
@@ -680,7 +787,9 @@ program veru_oracle_v2.aleo {
     c4: DataChunk,
     c5: DataChunk,
     c6: DataChunk,
-    c7: DataChunk
+    c7: DataChunk,
+    c8: DataChunk,
+    c9: DataChunk
   }
 
 

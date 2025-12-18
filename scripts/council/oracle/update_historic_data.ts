@@ -4,18 +4,18 @@ import { getProposalStatus, validateExecution, validateProposer, validateVote } 
 
 import { getVotersWithYesVotes, padWithZeroAddress } from "../../../utils/voters";
 import { ExecutionMode } from "@doko-js/core";
-import { Veru_oracle_council_imp_v2Contract } from "../../../artifacts/js/veru_oracle_council_imp_v2";
-import { Veru_oracle_council_v2Contract } from "../../../artifacts/js/veru_oracle_council_v2";
+import { Veru_oracle_council_imp_v3Contract } from "../../../artifacts/js/veru_oracle_council_imp_v3";
+import { Veru_oracle_council_v3Contract } from "../../../artifacts/js/veru_oracle_council_v3";
 import { COUNCIL_TOTAL_PROPOSALS_INDEX, SUPPORTED_THRESHOLD, TAG_UPDATE_HISTORIC_DATA } from "../../../utils/constants";
-import { UpdateHistoricData  } from "../../../artifacts/js/types/veru_oracle_council_imp_v2";
-import { getUpdateHistoricDataLeo } from "../../../artifacts/js/js2leo/veru_oracle_council_imp_v2";
-import { ExternalProposal } from "../../../artifacts/js/types/veru_oracle_council_v2";
-import { getExternalProposalLeo } from "../../../artifacts/js/js2leo/veru_oracle_council_v2";
-import { AttestedData } from "../../../artifacts/js/types/veru_oracle_v2";
+import { UpdateHistoricData  } from "../../../artifacts/js/types/veru_oracle_council_imp_v3";
+import { getUpdateHistoricDataLeo } from "../../../artifacts/js/js2leo/veru_oracle_council_imp_v3";
+import { ExternalProposal } from "../../../artifacts/js/types/veru_oracle_council_v3";
+import { getExternalProposalLeo } from "../../../artifacts/js/js2leo/veru_oracle_council_v3";
+import { AttestedData } from "../../../artifacts/js/types/veru_oracle_data_v3";
 
 const mode = ExecutionMode.SnarkExecute;
-const council = new Veru_oracle_council_v2Contract({ mode, priorityFee: 10_000 });
-const councilImpl = new Veru_oracle_council_imp_v2Contract({ mode, priorityFee: 10_000 });
+const council = new Veru_oracle_council_v3Contract({ mode, priorityFee: 10_000 });
+const councilImpl = new Veru_oracle_council_imp_v3Contract({ mode, priorityFee: 10_000 });
 
 
 export const proposeUpdateHistoricData = async (is_sgx_attested_data: boolean, timestamped_hash: bigint, attested_data: AttestedData): Promise<number> => {
@@ -31,7 +31,6 @@ export const proposeUpdateHistoricData = async (is_sgx_attested_data: boolean, t
   const updateHistoricData: UpdateHistoricData = {
     tag: TAG_UPDATE_HISTORIC_DATA,
     id: proposalId,
-    is_sgx_attested_data: is_sgx_attested_data,
     timestamped_hash: timestamped_hash,
     attested_data: attested_data
   };
@@ -61,7 +60,6 @@ export const voteUpdateHistoricData = async (proposalId: number, is_sgx_attested
   const updateHistoricData: UpdateHistoricData = {
     tag: TAG_UPDATE_HISTORIC_DATA,
     id: proposalId,
-    is_sgx_attested_data: is_sgx_attested_data,
     timestamped_hash: timestamped_hash,
     attested_data: attested_data
   };
@@ -93,7 +91,6 @@ export const execUpdateHistoricData = async (proposalId: number, is_sgx_attested
   const updateHistoricData: UpdateHistoricData = {
     tag: TAG_UPDATE_HISTORIC_DATA,
     id: proposalId,
-    is_sgx_attested_data: is_sgx_attested_data,
     timestamped_hash: timestamped_hash,
     attested_data: attested_data
   };
@@ -112,7 +109,6 @@ export const execUpdateHistoricData = async (proposalId: number, is_sgx_attested
   console.log(voters)
   const updateHistoricDataTx = await councilImpl.update_historic_data(
     updateHistoricData.id,
-    updateHistoricData.is_sgx_attested_data,
     updateHistoricData.timestamped_hash,
     updateHistoricData.attested_data,
     voters
