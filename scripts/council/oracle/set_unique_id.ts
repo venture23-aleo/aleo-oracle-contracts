@@ -117,7 +117,7 @@ export const execSetUniqueID = async (proposalId: number, unique_id: UniqueID) =
 
 async function run() {
 
-  let uniqueId = getUniqueID(parseJSONLikeString("{ chunk_1: 88626332893175282811551044736698063735u128, chunk_2: 147269136852994607438230605496892530896u128 }"));
+  let uniqueId = getUniqueID(parseJSONLikeString("{ chunk_1: 97629542126347321313557611409364902964u128, chunk_2: 319273416265687922804867843916602973391u128 }"));
   const proposalId = await proposeSetUniqueID(uniqueId);
   await execSetUniqueID(proposalId, uniqueId);
 }

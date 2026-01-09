@@ -125,9 +125,6 @@ program veru_oracle_data_v3.aleo {
   // unique_id is always stored with 0u8 key
   mapping sgx_unique_id: u8 => UniqueID;
 
-  // pcr_values is always stored with 0u8 key
-  mapping nitro_pcr_values: u8 => PcrValues;
-
   // mapping with allowed enclave keys
   mapping allowed_keys: address => bool;
 
@@ -215,18 +212,6 @@ async transition initialize(public owner_address: address) -> Future {
     assert_eq(from, current_owner);
 
     Mapping::set(sgx_unique_id, 0u8, unique_id);
-  }
-
-  async transition set_pcr_values(public pcr_values: PcrValues) -> Future {
-    return finalize_set_pcr_values(self.caller, pcr_values);
-  }
-
-  async function finalize_set_pcr_values(public from: address, public pcr_values: PcrValues) {
-    // caller must be admin
-    let current_owner: address = Mapping::get(admin, OWNER_INDEX);
-    assert_eq(from, current_owner);
-
-    Mapping::set(nitro_pcr_values, 0u8, pcr_values);
   }
 
   async transition set_key(
@@ -380,7 +365,7 @@ async transition initialize(public owner_address: address) -> Future {
       f1: report_data.f1,
       f2: 0u128,
       f3: 0u128,
-      f4: 0u128,
+      f4: report_data.f4,
       f5: report_data.f5,
       f6: report_data.f6,
       f7: report_data.f7,
@@ -546,6 +531,9 @@ async transition initialize(public owner_address: address) -> Future {
     public attested_data: [AttestedData; 10]
   ){
     assert_eq(from, veru_oracle_interface_v3.aleo);
+
+    // is check for null necessary
+
     for i in 0u8..10u8 {
           // replace latest data if current data is newer
           let latest_data: AttestedData = Mapping::get_or_use(sgx_attested_data, request_hash[i], AttestedData { data: 0u128, attestation_timestamp: 0u128 });
@@ -643,6 +631,90 @@ async transition initialize(public owner_address: address) -> Future {
       }
     }
   }
+
+
+
+
+  /// Stores SGX-attested data after full verification and identity match,
+  /// updating both a historical record keyed by a timestamped hash and the
+  /// latest value keyed by a stable `request_hash`.
+  ///
+  /// Pipeline:
+  /// 1) Require HTTP status OK in `report_data.c0.f4 == 200`.
+  /// 2) `verify_sgx_report(...)` to check SGX flags, data binding, and signature.
+  /// 3) Compute `request_hash = get_request_hash(report_data)`.
+  /// 4) Compute `timestamped_hash = Poseidon8({request_hash, attestation_timestamp})`.
+  /// 5) Build `AttestedData { data: report_data.c0.f2, attestation_timestamp: report_data.c0.f3 }`.
+  /// 6) `finalize_set_data_sgx(...)` enforces:
+  ///    - Caller key is allowed
+  ///    - Oracle is unpaused
+  ///    - Report unique_id matches stored `sgx_unique_id`
+  ///    - Historical write at `timestamped_hash`
+  ///    - Latest write at `request_hash` only if timestamp is newer
+  async transition set_single_data_sgx(
+    public report_data: ReportData,
+    public report: Report,
+    public sig: signature,
+    public pub_key: address
+  ) -> Future {
+    assert_eq(report_data.c0.f4, VALID_HTTP_STATUS);
+    verify_sgx_report(report_data, report, sig, pub_key);
+
+    let request_hash: u128 = get_request_hash(report_data.c0);
+
+    let struct_to_hash: TimestampedHash = TimestampedHash {
+      request_hash: request_hash,
+      attestation_timestamp: report_data.c0.f3
+    };
+
+    let timestamped_hash: u128 = Poseidon8::hash_to_u128(struct_to_hash);
+
+    let attested_data: AttestedData = AttestedData {
+      data: report_data.c0.f2,
+      attestation_timestamp: report_data.c0.f3
+    };
+
+    return finalize_set_single_sgx(
+      request_hash,
+      timestamped_hash,
+      attested_data,
+      report.c0.f8,
+      report.c0.f9,
+      pub_key,
+      self.caller
+    );
+  }
+
+  async function finalize_set_single_sgx(
+    public request_hash: u128,
+    public timestamped_hash: u128,
+    public attested_data: AttestedData,
+    public report_unique_id_1: u128,
+    public report_unique_id_2: u128,
+    public pub_key: address,
+    public from: address
+  ) {
+    assert_eq(from, veru_oracle_interface_v3.aleo);
+    let pub_key_allowed: bool = Mapping::get_or_use(allowed_keys, pub_key, false);
+    assert(pub_key_allowed);
+
+    assert(Mapping::get(status, STATUS_INDEX) == UNPAUSED_VALUE); // oracle must be unpaused
+
+    // verify unique id from the TEE report
+    let unique_id: UniqueID = Mapping::get(sgx_unique_id, 0u8);
+    assert_eq(unique_id.chunk_1, report_unique_id_1);
+    assert_eq(unique_id.chunk_2, report_unique_id_2);
+
+    Mapping::set(sgx_attested_data, timestamped_hash, attested_data);
+
+    // replace latest data if current data is newer
+    let latest_data: AttestedData = Mapping::get_or_use(sgx_attested_data, request_hash, AttestedData { data: 0u128, attestation_timestamp: 0u128 });
+
+    if (attested_data.attestation_timestamp > latest_data.attestation_timestamp) {
+      Mapping::set(sgx_attested_data, request_hash, attested_data);
+    }
+  }
+
 
 
   async transition update_historic_data ( public timestamped_hash: u128, public attested_data: AttestedData) -> Future {

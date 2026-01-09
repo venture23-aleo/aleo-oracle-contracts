@@ -19,13 +19,12 @@ program veru_oracle_council_imp_v3.aleo
 
     const TAG_TRANSFER_OWNERSHIP: u8 = 1u8;
     const TAG_SET_UNIQUE_ID: u8 = 2u8;
-    const TAG_SET_PCR_VALUES: u8 = 3u8;
-    const TAG_SET_KEYS: u8 = 4u8;
-    const TAG_UPDATE_HISTORIC_DATA: u8 = 5u8;
-    const TAG_PAUSE: u8 = 6u8;
-    const TAG_UNPAUSE: u8 = 7u8;
-    const TAG_UPGRADE_PROGRAM: u8 = 8u8;
-    const TAG_TRANSFER_OWNERSHIP_CHECKSUM: u8 = 9u8;
+    const TAG_SET_KEYS: u8 = 3u8;
+    const TAG_UPDATE_HISTORIC_DATA: u8 = 4u8;
+    const TAG_PAUSE: u8 = 5u8;
+    const TAG_UNPAUSE: u8 = 6u8;
+    const TAG_UPGRADE_PROGRAM: u8 = 7u8;
+    const TAG_TRANSFER_OWNERSHIP_CHECKSUM: u8 = 8u8;
 
 
     ///////////////////////////////////////////
@@ -92,36 +91,7 @@ program veru_oracle_council_imp_v3.aleo
     }
 
 
-    ////////////////////////////////////////
-    /////// Bridge: Remove Attestor ////////
-    ///////////////////////////////////////
 
-    struct SetPcrValues {
-        tag: u8,
-        id: u32,
-        pcr_values: PcrValues
-    }
-
-    async transition tb_set_pcr_values(public id: u32, public pcr_values: PcrValues, public voters: [address; 5]) -> Future{
-        let proposal: SetPcrValues = SetPcrValues {
-            tag: TAG_SET_PCR_VALUES,
-            id,
-            pcr_values
-        };
-        let proposal_hash: field = BHP256::hash_to_field(proposal);
-
-        // Execute the proposal
-        let setting_pcr_values: Future = veru_oracle_data_v3.aleo/set_pcr_values(pcr_values);
-
-        let external_execute: Future = veru_oracle_council_v3.aleo/external_execute(id, proposal_hash, voters);
-
-        return finalize_tb_set_pcr_values(setting_pcr_values, external_execute);
-    }
-
-    async function finalize_tb_set_pcr_values(f0: Future, f1: Future) {
-        f0.await();
-        f1.await();
-    }
 
     /////////////////////////////////////////
     /////// Bridge: Update Threshold ////////

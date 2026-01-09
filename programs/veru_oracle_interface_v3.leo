@@ -49,4 +49,27 @@ program veru_oracle_interface_v3.aleo {
         set_request_hash_data.await();
     }
 
+
+     async transition single_data_sgx(
+        public report_data: ReportData,
+        public report: Report,
+        public sig: signature,
+        public pub_key: address
+        ) -> Future
+        {
+            
+            let set_data: Future = veru_oracle_data_v3.aleo/set_single_data_sgx(report_data, report, sig, pub_key);
+
+            return finalize_data_sgx(
+                set_data
+            );
+            
+        }
+
+    async function finalize_data_sgx(
+        public set_data: Future,
+    ) {
+        set_data.await();
+    }
+
 }

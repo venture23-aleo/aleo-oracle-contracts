@@ -4,19 +4,19 @@ dotenv.config();
 export default {
   accounts: [process.env.ALEO_PRIVATE_KEY],
   mode: 'execute',
-  devnet: false,
-  mainnet: {},
   networks: {
-    // testnet: {
-    //   endpoint: 'http://localhost:3030',
-    //   accounts: [
-    //     process.env.ALEO_DEVNET_PRIVATE_KEY1,
-    //     process.env.ALEO_DEVNET_PRIVATE_KEY2,
-    //     process.env.ALEO_DEVNET_PRIVATE_KEY3
-    //   ],
-    //   priorityFee: 0.01
-    // },
+    devnet: {
+      network: 'testnet',
+      endpoint: 'http://localhost:3030',
+      accounts: [
+        process.env.ALEO_PRIVATE_KEY_TESTNET3,
+        process.env.ALEO_DEVNET_PRIVATE_KEY2,
+        process.env.ALEO_DEVNET_PRIVATE_KEY3
+      ],
+      priorityFee: 0.01
+    },
     testnet: {
+      network: 'testnet',
       endpoint: 'https://api.explorer.provable.com/v1',
       accounts: [
         process.env.ALEO_PRIVATE_KEY,
@@ -24,10 +24,11 @@ export default {
       priorityFee: 0.01
     },
     mainnet: {
-      endpoint: 'https://api.explorer.aleo.org/v1',
+      network: 'mainnet',
+      endpoint: 'https://api.explorer.provable.com/v1',
       accounts: [process.env.ALEO_PRIVATE_KEY_MAINNET],
       priorityFee: 0.001
     }
   },
-  defaultNetwork: 'testnet'
+  defaultNetwork: 'devnet'
 };

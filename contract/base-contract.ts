@@ -1,16 +1,17 @@
-// @ts-nocheck
-import { PrivateKey, TransactionModel } from '@provablehq/sdk';
+import { PrivateKey, Account, RecordCiphertext } from '@provablehq/sdk';
 import {
   ContractConfig,
   snarkDeploy,
   checkDeployment,
   CreateExecutionContext,
-  TransactionResponse
+  TransactionResponse,
+  ExecutionContext
 } from '@doko-js/core';
-import { to_address } from 'aleo-program-to-address';
 import networkConfig from '../aleo-config';
+import { to_address } from '@doko-js/wasm';
 
 export class BaseContract {
+  // @ts-expect-error Initialized at constructor
   public config: ContractConfig = {};
   public ctx: ExecutionContext;
 
@@ -24,8 +25,7 @@ export class BaseContract {
 
     if (!this.config.networkName)
       this.config.networkName = networkConfig.defaultNetwork;
-    if (!this.config.networkMode)
-      this.config.networkMode = networkConfig.networkMode;
+
     const networkName = this.config.networkName;
     if (networkName) {
       if (!networkConfig?.networks[networkName])
@@ -36,7 +36,7 @@ export class BaseContract {
       this.config = {
         ...this.config,
         network: networkConfig.networks[networkName],
-        isDevnet: networkConfig.devnet || false
+        isDevnet: networkName === 'devnet'
       };
     }
 
@@ -47,13 +47,13 @@ export class BaseContract {
   }
 
   async isDeployed(): Promise<boolean> {
-    const endpoint = `${this.config.network.endpoint}/${this.config.networkName}/program/${this.config.appName}.aleo`;
+    const endpoint = `${this.config.network.endpoint}/${this.config.network.network}/program/${this.config.appName}.aleo`;
     return checkDeployment(endpoint);
   }
 
-  /** 
-    * @deprecated Use transaction receipt to wait.
-  */
+  /**
+   * @deprecated Use transaction receipt to wait.
+   */
 
   async wait<T extends TransactionResponse = TransactionResponse>(
     transaction: T
@@ -70,13 +70,15 @@ export class BaseContract {
   }
 
   address(): string {
-    return to_address(`${this.config.appName}.aleo`);
+    return to_address(
+      `${this.config.appName}.aleo`,
+      this.config.network.network
+    );
   }
 
   // TODO: handle properly
   getAccounts(): string[] {
     const accounts = this.config.network.accounts.map((pvtKey) => {
-      console.log(pvtKey);
       return PrivateKey.from_string(pvtKey).to_address().to_string();
     });
     return accounts;
@@ -106,6 +108,5 @@ export class BaseContract {
     } else {
       this.config.privateKey = this.config.network.accounts[accountIndex];
     }
-    this.ctx = CreateExecutionContext(this.config);
   }
 }

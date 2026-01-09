@@ -118,7 +118,7 @@ export const execSetKey = async (proposalId: number, key: string, status: boolea
 }
 
 async function run() {
-  let key = "aleo1km9ntzyuwnyqjzye5kzsm283t9fx58zwnfrk2lcf08znpg78fsgs7udrv4";
+  let key = "aleo1hyns02a0g0anckw5r9gl4gv30a0jg7jfgcjxpm70jjcyekn3mcpqjt9fcq";
   const proposalId = await proposeSetKey(key, true);
   await execSetKey(proposalId, key, true);
 }
