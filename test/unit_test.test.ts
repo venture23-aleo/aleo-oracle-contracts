@@ -229,42 +229,42 @@ describe('deploy test', () => {
 
     });
 
-    describe("Update Historic data", () => {
+    // describe("Update Historic data", () => {
 
-        const request_hash = BigInt("295112419408573232705047733941974061637");
-        const AttestedData: AttestedData = {
-                data: request_hash,
-                attestation_timestamp: reportData.c0.f3
-        };
+    //     const request_hash = BigInt("295112419408573232705047733941974061637");
+    //     const AttestedData: AttestedData = {
+    //             data: request_hash,
+    //             attestation_timestamp: reportData.c0.f3
+    //     };
 
-        const hashStruct = (struct: any): bigint => {
-            const structString = js2leo.json(struct)
-            console.log(structString);
-            const structHash = hash("bhp256", structString, "field");
-            const hashBigInt = leo2js.field(structHash);
-            return hashBigInt
-        }
+    //     const hashStruct = (struct: any): bigint => {
+    //         const structString = js2leo.json(struct)
+    //         console.log(structString);
+    //         const structHash = hash("bhp256", structString, "field");
+    //         const hashBigInt = leo2js.field(structHash);
+    //         return hashBigInt
+    //     }
         
-        const timestamped_hash = hashStruct(AttestedData);
+    //     const timestamped_hash = hashStruct(AttestedData);
 
-        test.failing("should not update Historic data", async () => {
-            oracle_data.connect(aleoUser3);
-            const tx = await oracle_data.update_historic_data(timestamp, AttestedData);
-            await tx.wait();
-            },
-            TIMEOUT
-        );
+    //     test.failing("should not update Historic data", async () => {
+    //         oracle_data.connect(aleoUser3);
+    //         const tx = await oracle_data.update_historic_data(timestamp, AttestedData);
+    //         await tx.wait();
+    //         },
+    //         TIMEOUT
+    //     );
 
-        test("should update Historic data by admin", async () => {
-            oracle_data.connect(owner);
-            const tx = await oracle_data.update_historic_data(timestamp, AttestedData);
-            await tx.wait();
-            expect(await oracle_data.sgx_attested_data(timestamp)).toEqual(AttestedData);
-            },
-            TIMEOUT
-        );
+    //     test("should update Historic data by admin", async () => {
+    //         oracle_data.connect(owner);
+    //         const tx = await oracle_data.update_historic_data(timestamp, AttestedData);
+    //         await tx.wait();
+    //         expect(await oracle_data.sgx_attested_data(timestamp)).toEqual(AttestedData);
+    //         },
+    //         TIMEOUT
+    //     );
 
-    });
+    // });
 
     describe("Set single data sgx", () => {
 

@@ -40,6 +40,12 @@ program veru_oracle_data_v3.aleo {
     attestation_timestamp: u128
   }
 
+  struct TimestampedAttestation {
+      request_hash: u128,
+      timestamped_hash: u128,
+      attested_data: AttestedData
+  } 
+
   struct PositionData {
     block_index: u8,
     shift_a: u8,
@@ -139,6 +145,8 @@ program veru_oracle_data_v3.aleo {
 
   // zero hash value
   const ZERO_REPORT_DATA_HASH: u128 = 80824152642381387473083613428479139074u128;
+
+  const ARRAY_SIZE: u8 = 10u8;
 
 async transition initialize(public owner_address: address) -> Future {
     // can be called only once
@@ -328,32 +336,29 @@ async transition initialize(public owner_address: address) -> Future {
 
 
   async transition set_request_hash_data(
-    public request_hashes: [u128; 10],
-    public attested_data: [AttestedData; 10],
+    public data_packets : [TimestampedAttestation; ARRAY_SIZE]
   ) -> Future {
     return finalize_set_request_hash_data(
       self.caller,
-      request_hashes,
-      attested_data,
+      data_packets
     );
   }
 
   async function finalize_set_request_hash_data(
     public from: address,
-    public request_hash: [u128; 10],
-    public attested_data: [AttestedData; 10]
+    public data_packets : [TimestampedAttestation; ARRAY_SIZE]
   ){
     assert_eq(from, veru_oracle_interface_v3.aleo);
 
     // is check for null necessary
 
-    for i in 0u8..10u8 {
-        if (request_hash[i] != ZERO_REPORT_DATA_HASH) {
+    for i in 0u8..ARRAY_SIZE {
+        if (data_packets[i].request_hash != ZERO_REPORT_DATA_HASH) {
           // replace latest data if current data is newer
-          let latest_data: AttestedData = Mapping::get_or_use(sgx_attested_data, request_hash[i], AttestedData { data: 0u128, attestation_timestamp: 0u128 });
+          let latest_data: AttestedData = Mapping::get_or_use(sgx_attested_data, data_packets[i].request_hash, AttestedData { data: 0u128, attestation_timestamp: 0u128 });
 
-          if (attested_data[i].attestation_timestamp > latest_data.attestation_timestamp) {
-            Mapping::set(sgx_attested_data, request_hash[i], attested_data[i]);
+          if (data_packets[i].attested_data.attestation_timestamp > latest_data.attestation_timestamp) {
+            Mapping::set(sgx_attested_data, data_packets[i].request_hash, data_packets[i].attested_data);
           }
         }
     }
@@ -380,45 +385,35 @@ async transition initialize(public owner_address: address) -> Future {
     public report: Report,
     public sig: signature,
     public pub_key: address
-  ) -> ([u128;10], [AttestedData; 10], Future) {
+  ) -> ([TimestampedAttestation; ARRAY_SIZE], Future) {
 
     verify_sgx_report(report_data, report, sig, pub_key);
-    let report_datas: [DataChunk; 10] = [report_data.c0, report_data.c1, report_data.c2, report_data.c3, report_data.c4, report_data.c5, report_data.c6, report_data.c7, report_data.c8, report_data.c9];
+    let report_datas: [DataChunk; ARRAY_SIZE] = [report_data.c0, report_data.c1, report_data.c2, report_data.c3, report_data.c4, report_data.c5, report_data.c6, report_data.c7, report_data.c8, report_data.c9];
 
-    let request_hashes: [u128; 10] = [0u128; 10];
-    let timestamped_hashes: [u128; 10] = [0u128; 10];
-    let attested_datas: [AttestedData; 10] = [AttestedData { data: 0u128, attestation_timestamp: 0u128 }; 10];
-    let unique_ids_1: [u128; 10] = [0u128; 10];
-    let unique_ids_2: [u128; 10] = [0u128; 10];
+    let attested_data: AttestedData = AttestedData { data: 0u128, attestation_timestamp: 0u128 };
+    let data_packets: [TimestampedAttestation; ARRAY_SIZE] = [TimestampedAttestation {request_hash: ZERO_REPORT_DATA_HASH, timestamped_hash: 0u128, attested_data: attested_data}; ARRAY_SIZE];
 
-    for i:u8 in 0u8..10u8 {
-        if (report_datas[i].f1 == 0u128){
-                    request_hashes[i] = ZERO_REPORT_DATA_HASH;
-        }
-        else {
-                    request_hashes[i] = get_request_hash(report_datas[i]);
-        }
+    for i:u8 in 0u8..ARRAY_SIZE {
+        if (report_datas[i].f1 != 0u128){
+            data_packets[i].request_hash = get_request_hash(report_datas[i]);
 
-        if request_hashes[i] != ZERO_REPORT_DATA_HASH {
-            assert_eq(report_datas[i].f4, VALID_HTTP_STATUS);
-        }
-        
-        timestamped_hashes[i] = Poseidon8::hash_to_u128(TimestampedHash {
-                          request_hash: request_hashes[i],
+            data_packets[i].timestamped_hash = Poseidon8::hash_to_u128(TimestampedHash {
+                          request_hash: data_packets[i].request_hash,
                           attestation_timestamp: report_datas[i].f3
-        });
+            });
 
-        attested_datas[i] = AttestedData {
-            data: report_datas[i].f2,
-            attestation_timestamp: report_datas[i].f3
-        };
+            assert_eq(report_datas[i].f4, VALID_HTTP_STATUS);
+
+            data_packets[i].attested_data = AttestedData {
+                data: report_datas[i].f2,
+                attestation_timestamp: report_datas[i].f3
+            };
+        }
     }
 
-    return (request_hashes,attested_datas,finalize_set_timestampped_data(
+    return (data_packets,finalize_set_timestampped_data(
       self.caller,
-      request_hashes,
-      timestamped_hashes,
-      attested_datas,
+      data_packets,
       report.c0.f8,
       report.c0.f9,
       pub_key
@@ -427,9 +422,7 @@ async transition initialize(public owner_address: address) -> Future {
 
   async function finalize_set_timestampped_data(
     public from: address,
-    public request_hash: [u128; 10],
-    public timestamped_hash: [u128; 10],
-    public attested_data: [AttestedData; 10],
+    public data_packets: [TimestampedAttestation; ARRAY_SIZE],
     public report_unique_id_1: u128,
     public report_unique_id_2: u128,
     public pub_key: address
@@ -445,10 +438,11 @@ async transition initialize(public owner_address: address) -> Future {
     assert_eq(unique_id.chunk_1, report_unique_id_1);
     assert_eq(unique_id.chunk_2, report_unique_id_2);
 
-    for i: u8 in 0u8..10u8 {
-      if (request_hash[i] != ZERO_REPORT_DATA_HASH) {
-          assert(block.timestamp as u128 >= attested_data[i].attestation_timestamp);
-          Mapping::set(sgx_attested_data, timestamped_hash[i], attested_data[i]);
+    assert(block.timestamp as u128 >= data_packets[0].attested_data.attestation_timestamp);
+
+    for i: u8 in 0u8..ARRAY_SIZE {
+      if (data_packets[i].request_hash != ZERO_REPORT_DATA_HASH) {
+          Mapping::set(sgx_attested_data, data_packets[i].timestamped_hash, data_packets[i].attested_data);
       }
     }
   }
