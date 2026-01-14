@@ -8,11 +8,6 @@ program veru_oracle_interface_v3.aleo {
     async constructor() {
         // The Leo compiler automatically generates the constructor logic.
     }
-    
-    struct AttestedData {
-        data: u128,
-        attestation_timestamp: u128
-    }
 
     async transition set_data_sgx(
         public report_data: ReportData,

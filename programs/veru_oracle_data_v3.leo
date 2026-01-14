@@ -96,6 +96,10 @@ program veru_oracle_data_v3.aleo {
     c9: DataChunk
   }
 
+  struct NewReport {
+    c0: DataChunk
+  }
+
   struct ReportData {
     c0: DataChunk,
     c1: DataChunk,
@@ -134,7 +138,7 @@ program veru_oracle_data_v3.aleo {
   mapping sgx_attested_data: u128 => AttestedData;
 
   // zero hash value
-  const ZERO_REPORT_DATA_HASH: u128 = 302058964107265739830707345800219864335u128;
+  const ZERO_REPORT_DATA_HASH: u128 = 80824152642381387473083613428479139074u128;
 
 async transition initialize(public owner_address: address) -> Future {
     // can be called only once
@@ -237,128 +241,6 @@ async transition initialize(public owner_address: address) -> Future {
     Mapping::set(allowed_keys, pub_key, allowed);
   }
 
-
-  /// The extraction is controlled by `PositionData` which carries:
-  /// - `shift_a`: right shift to align the masked bits from `a`
-  /// - `shift_b`: left shift to align the masked bits from `b`
-  /// - `mask_a`, `mask_b`: bitmasks selecting the relevant slices
-  ///
-  /// The two aligned slices are OR-combined to produce the final value.
-  function extract_value(
-    a: u128,
-    b: u128,
-    position_info: PositionData
-  ) -> u128 {
-    let a_masked: u128 = a & position_info.mask_a;
-    let a_masked_shifted: u128 = a_masked.shr_wrapped(position_info.shift_a);
-
-    let b_masked: u128 = b & position_info.mask_b;
-    let b_masked_shifted: u128 = b_masked.shl_wrapped(position_info.shift_b);
-
-    let result: u128 = a_masked_shifted | b_masked_shifted;
-
-    return result;
-  }
-
-  function select_chunk(c: DataChunk, pos: u8) -> (u128, u128, u128, u128) {
-    if pos == 0u8 {
-      return (c.f0, c.f1, c.f2, c.f3);
-    }
-    if pos == 1u8 {
-      return (c.f1, c.f2, c.f3, c.f4);
-    }
-    if pos == 2u8 {
-      return (c.f2, c.f3, c.f4, c.f5);
-    }
-    if pos == 3u8 {
-      return (c.f3, c.f4, c.f5, c.f6);
-    }
-    if pos == 4u8 {
-      return (c.f4, c.f5, c.f6, c.f7);
-    }
-    if pos == 5u8 {
-      return (c.f5, c.f6, c.f7, c.f8);
-    }
-    if pos == 6u8 {
-      return (c.f6, c.f7, c.f8, c.f9);
-    }
-    if pos == 7u8 {
-      return (c.f7, c.f8, c.f9, c.f10);
-    }
-    if pos == 8u8 {
-      return (c.f8, c.f9, c.f10, c.f11);
-    }
-    if pos == 9u8 {
-      return (c.f9, c.f10, c.f11, c.f12);
-    }
-    if pos == 10u8 {
-      return (c.f10, c.f11, c.f12, c.f13);
-    }
-    if pos == 11u8 {
-      return (c.f11, c.f12, c.f13, c.f14);
-    }
-    if pos == 12u8 {
-      return (c.f12, c.f13, c.f14, c.f15);
-    }
-    if pos == 13u8 {
-      return (c.f13, c.f14, c.f15, c.f16);
-    }
-    if pos == 14u8 {
-      return (c.f14, c.f15, c.f16, c.f17);
-    }
-    if pos == 15u8 {
-      return (c.f15, c.f16, c.f17, c.f18);
-    }
-    if pos == 16u8 {
-      return (c.f16, c.f17, c.f18, c.f19);
-    }
-    if pos == 17u8 {
-      return (c.f17, c.f18, c.f19, c.f20);
-    }
-    if pos == 18u8 {
-      return (c.f18, c.f19, c.f20, c.f21);
-    }
-    if pos == 19u8 {
-      return (c.f19, c.f20, c.f21, c.f22);
-    }
-    if pos == 20u8 {
-      return (c.f20, c.f21, c.f22, c.f23);
-    }
-    if pos == 21u8 {
-      return (c.f21, c.f22, c.f23, c.f24);
-    }
-    if pos == 22u8 {
-      return (c.f22, c.f23, c.f24, c.f25);
-    }
-    if pos == 23u8 {
-      return (c.f23, c.f24, c.f25, c.f26);
-    }
-    if pos == 24u8 {
-      return (c.f24, c.f25, c.f26, c.f27);
-    }
-    if pos == 25u8 {
-      return (c.f25, c.f26, c.f27, c.f28);
-    }
-    if pos == 26u8 {
-      return (c.f26, c.f27, c.f28, c.f29);
-    }
-    if pos == 27u8 {
-      return (c.f27, c.f28, c.f29, c.f30);
-    }
-    if pos == 28u8 {
-      return (c.f28, c.f29, c.f30, c.f31);
-    }
-    if pos == 29u8 {
-      return (c.f29, c.f30, c.f31, 0u128);
-    }
-    if pos == 30u8 {
-      return (c.f30, c.f31, 0u128, 0u128);
-    }
-
-    return (0u128, 0u128, 0u128, 0u128);
-  }
-
-
   function get_request_hash(report_data: DataChunk) -> u128 {
     let report_data_chunk: DataChunk = DataChunk {
       f0: report_data.f0,
@@ -395,58 +277,15 @@ async transition initialize(public owner_address: address) -> Future {
       f31: report_data.f31
     };
 
-    let null_data: DataChunk = DataChunk {
-      f0: 0u128,
-      f1: 0u128,
-      f2: 0u128,
-      f3: 0u128,
-      f4: 0u128,
-      f5: 0u128,
-      f6: 0u128,
-      f7: 0u128,
-      f8: 0u128,
-      f9: 0u128,
-      f10: 0u128,
-      f11: 0u128,
-      f12: 0u128,
-      f13: 0u128,
-      f14: 0u128,
-      f15: 0u128,
-      f16: 0u128,
-      f17: 0u128,
-      f18: 0u128,
-      f19: 0u128,
-      f20: 0u128,
-      f21: 0u128,
-      f22: 0u128,
-      f23: 0u128,
-      f24: 0u128,
-      f25: 0u128,
-      f26: 0u128,
-      f27: 0u128,
-      f28: 0u128,
-      f29: 0u128,
-      f30: 0u128,
-      f31: 0u128
+    let new_report: NewReport = NewReport {
+      c0: report_data_chunk
     };
 
-    let request_data: ReportData = ReportData {
-      c0: report_data_chunk,
-      c1: null_data,
-      c2: null_data,
-      c3: null_data,
-      c4: null_data,
-      c5: null_data,  
-      c6: null_data,
-      c7: null_data,
-      c8: null_data,
-      c9: null_data
-    };
-
-    let request_hash: u128 = Poseidon8::hash_to_u128(request_data);
-
+    let request_hash: u128 = Poseidon8::hash_to_u128(new_report);
     return request_hash;
   }
+
+
   /// Verifies an Intel SGX report and its signature against expected security properties,
   /// and that it binds to the provided `report_data`.
   ///
@@ -488,32 +327,6 @@ async transition initialize(public owner_address: address) -> Future {
   }
 
 
-  /// Verifies an AWS Nitro Enclave report and its signature against expected bindings,
-  /// and confirms that `report_data` is the message that was attested.
-  ///
-  /// Checks performed:
-  /// 1) `Poseidon8(report_data)` equals `hash_from_report`, which was extracted
-  ///    from the Nitro report blob using `select_chunk` and `extract_value`.
-  /// 2) Signature verification: `signature::verify(sig, pub_key, Poseidon8(report))`
-  function verify_nitro_report(
-    report_data: ReportData,
-    report: Report,
-    sig: signature,
-    pub_key: address,
-    hash_from_report: u128
-  ) {
-    let report_data_hash: u128 = Poseidon8::hash_to_u128(report_data);
-    assert_eq(report_data_hash, hash_from_report);
-
-    let report_hash: u128 = Poseidon8::hash_to_u128(report);
-
-    // verify that the report was signed by TEE
-    let is_valid: bool = signature::verify(sig, pub_key, report_hash);
-    assert(is_valid);
-  }
-
-
-
   async transition set_request_hash_data(
     public request_hashes: [u128; 10],
     public attested_data: [AttestedData; 10],
@@ -535,12 +348,14 @@ async transition initialize(public owner_address: address) -> Future {
     // is check for null necessary
 
     for i in 0u8..10u8 {
+        if (request_hash[i] != ZERO_REPORT_DATA_HASH) {
           // replace latest data if current data is newer
           let latest_data: AttestedData = Mapping::get_or_use(sgx_attested_data, request_hash[i], AttestedData { data: 0u128, attestation_timestamp: 0u128 });
 
           if (attested_data[i].attestation_timestamp > latest_data.attestation_timestamp) {
             Mapping::set(sgx_attested_data, request_hash[i], attested_data[i]);
           }
+        }
     }
   }
 
@@ -577,7 +392,12 @@ async transition initialize(public owner_address: address) -> Future {
     let unique_ids_2: [u128; 10] = [0u128; 10];
 
     for i:u8 in 0u8..10u8 {
-        request_hashes[i] = get_request_hash(report_datas[i]);
+        if (report_datas[i].f1 == 0u128){
+                    request_hashes[i] = ZERO_REPORT_DATA_HASH;
+        }
+        else {
+                    request_hashes[i] = get_request_hash(report_datas[i]);
+        }
 
         if request_hashes[i] != ZERO_REPORT_DATA_HASH {
             assert_eq(report_datas[i].f4, VALID_HTTP_STATUS);
@@ -627,6 +447,7 @@ async transition initialize(public owner_address: address) -> Future {
 
     for i: u8 in 0u8..10u8 {
       if (request_hash[i] != ZERO_REPORT_DATA_HASH) {
+          assert(block.timestamp as u128 >= attested_data[i].attestation_timestamp);
           Mapping::set(sgx_attested_data, timestamped_hash[i], attested_data[i]);
       }
     }
@@ -704,6 +525,9 @@ async transition initialize(public owner_address: address) -> Future {
     let unique_id: UniqueID = Mapping::get(sgx_unique_id, 0u8);
     assert_eq(unique_id.chunk_1, report_unique_id_1);
     assert_eq(unique_id.chunk_2, report_unique_id_2);
+
+    // check timestamp
+    assert(block.timestamp as u128 >= attested_data.attestation_timestamp);
 
     Mapping::set(sgx_attested_data, timestamped_hash, attested_data);
 
