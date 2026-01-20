@@ -17,7 +17,7 @@ export default {
     },
     testnet: {
       network: 'testnet',
-      endpoint: 'https://api.explorer.provable.com/v1',
+      endpoint: 'https://api.explorer.provable.com/v2',
       accounts: [
         process.env.ALEO_PRIVATE_KEY,
       ],
@@ -30,5 +30,5 @@ export default {
       priorityFee: 0.001
     }
   },
-  defaultNetwork: 'devnet'
+  defaultNetwork: 'testnet'
 };

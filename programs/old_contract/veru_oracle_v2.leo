@@ -1,9 +1,9 @@
-import veru_oracle_checksum_v3.aleo;
+import veru_oracle_checksum_v5.aleo;
 
-program veru_oracle_data_v3.aleo {
+program veru_oracle_data_v5.aleo {
 
     // upgrade through the checksum mapping in another program
-    @checksum(mapping="veru_oracle_checksum_v3.aleo/approved_checksums", key="veru_oracle_data_v3.aleo")
+    @checksum(mapping="veru_oracle_checksum_v5.aleo/approved_checksums", key="veru_oracle_data_v5.aleo")
     async constructor() {
         // The Leo compiler automatically generates the constructor logic.
     }

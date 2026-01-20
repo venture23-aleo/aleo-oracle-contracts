@@ -4,17 +4,17 @@ import { getProposalStatus, validateExecution, validateProposer, validateVote } 
 
 import { getVotersWithYesVotes, padWithZeroAddress } from "../../../utils/voters";
 import { ExecutionMode } from "@doko-js/core";
-import { Veru_oracle_council_imp_v3Contract } from "../../../artifacts/js/veru_oracle_council_imp_v3";
-import { Veru_oracle_council_v3Contract } from "../../../artifacts/js/veru_oracle_council_v3";
+import { Veru_oracle_council_imp_v5Contract } from "../../../artifacts/js/veru_oracle_council_imp_v5";
+import { Veru_oracle_council_v5Contract } from "../../../artifacts/js/veru_oracle_council_v5";
 import { COUNCIL_TOTAL_PROPOSALS_INDEX, SUPPORTED_THRESHOLD, TAG_SET_KEYS } from "../../../utils/constants";
-import { SetKeys  } from "../../../artifacts/js/types/veru_oracle_council_imp_v3";
-import { getSetKeysLeo } from "../../../artifacts/js/js2leo/veru_oracle_council_imp_v3";
-import { ExternalProposal } from "../../../artifacts/js/types/veru_oracle_council_v3";
-import { getExternalProposalLeo } from "../../../artifacts/js/js2leo/veru_oracle_council_v3";
+import { SetKeys  } from "../../../artifacts/js/types/veru_oracle_council_imp_v5";
+import { getSetKeysLeo } from "../../../artifacts/js/js2leo/veru_oracle_council_imp_v5";
+import { ExternalProposal } from "../../../artifacts/js/types/veru_oracle_council_v5";
+import { getExternalProposalLeo } from "../../../artifacts/js/js2leo/veru_oracle_council_v5";
 
 const mode = ExecutionMode.SnarkExecute;
-const council = new Veru_oracle_council_v3Contract({ mode, priorityFee: 10_000 });
-const councilImpl = new Veru_oracle_council_imp_v3Contract({ mode, priorityFee: 10_000 });
+const council = new Veru_oracle_council_v5Contract({ mode, priorityFee: 10_000 });
+const councilImpl = new Veru_oracle_council_imp_v5Contract({ mode, priorityFee: 10_000 });
 
 export const proposeSetKey = async (key: string, status: boolean): Promise<number> => {
 
@@ -118,7 +118,7 @@ export const execSetKey = async (proposalId: number, key: string, status: boolea
 }
 
 async function run() {
-  let key = "aleo1hyns02a0g0anckw5r9gl4gv30a0jg7jfgcjxpm70jjcyekn3mcpqjt9fcq";
+  let key = "aleo12hlr3t7ehdjz2udyg5qcm5ln494hxujyuvw43tztsrkv4uqr2y9szv3v8s";
   const proposalId = await proposeSetKey(key, true);
   await execSetKey(proposalId, key, true);
 }

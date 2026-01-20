@@ -1,9 +1,9 @@
-import veru_oracle_checksum_v3.aleo;
+import veru_oracle_checksum_v5.aleo;
 
-program veru_oracle_data_v3.aleo {
+program veru_oracle_data_v5.aleo {
 
     // upgrade through the checksum mapping in another program
-    @checksum(mapping="veru_oracle_checksum_v3.aleo/approved_checksums", key="veru_oracle_data_v3.aleo")
+    @checksum(mapping="veru_oracle_checksum_v5.aleo/approved_checksums", key="veru_oracle_data_v5.aleo")
     async constructor() {
         // The Leo compiler automatically generates the constructor logic.
     }
@@ -14,20 +14,6 @@ program veru_oracle_data_v3.aleo {
   struct UniqueID {
     chunk_1: u128,
     chunk_2: u128
-  }
-
-  // 3 AWS Nitro PCR_values
-  // 48 bytes each, split into 3 16 byte u128 chunks
-  struct PcrValues {
-    pcr_0_chunk_1: u128,
-    pcr_0_chunk_2: u128,
-    pcr_0_chunk_3: u128,
-    pcr_1_chunk_1: u128,
-    pcr_1_chunk_2: u128,
-    pcr_1_chunk_3: u128,
-    pcr_2_chunk_1: u128,
-    pcr_2_chunk_2: u128,
-    pcr_2_chunk_3: u128
   }
 
   struct AttestedData {
@@ -46,13 +32,6 @@ program veru_oracle_data_v3.aleo {
       attested_data: AttestedData
   } 
 
-  struct PositionData {
-    block_index: u8,
-    shift_a: u8,
-    shift_b: u8,
-    mask_a: u128,
-    mask_b: u128
-  }
 // a 512-byte data chunk
   struct DataChunk {
     f0: u128,
@@ -348,7 +327,7 @@ async transition initialize(public owner_address: address) -> Future {
     public from: address,
     public data_packets : [TimestampedAttestation; ARRAY_SIZE]
   ){
-    assert_eq(from, veru_oracle_interface_v3.aleo);
+    assert_eq(from, veru_oracle_interface_v5.aleo);
 
     // is check for null necessary
 
@@ -427,7 +406,7 @@ async transition initialize(public owner_address: address) -> Future {
     public report_unique_id_2: u128,
     public pub_key: address
   ) {
-    assert_eq(from, veru_oracle_interface_v3.aleo);
+    assert_eq(from, veru_oracle_interface_v5.aleo);
     let pub_key_allowed: bool = Mapping::get_or_use(allowed_keys, pub_key, false);
     assert(pub_key_allowed);
 
@@ -509,7 +488,7 @@ async transition initialize(public owner_address: address) -> Future {
     public pub_key: address,
     public from: address
   ) {
-    assert_eq(from, veru_oracle_interface_v3.aleo);
+    assert_eq(from, veru_oracle_interface_v5.aleo);
     let pub_key_allowed: bool = Mapping::get_or_use(allowed_keys, pub_key, false);
     assert(pub_key_allowed);
 

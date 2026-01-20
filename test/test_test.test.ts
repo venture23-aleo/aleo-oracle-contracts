@@ -2,11 +2,11 @@ import { ExecutionMode, parseJSONLikeString } from '@doko-js/core';
 const TIMEOUT = 20000_000;
 import data from './new_file.json';
 import singleData from './aleo_request.json';
-import { getAttestedData, getReport, getReportData } from '../artifacts/js/leo2js/veru_oracle_data_v3';
-import { Veru_oracle_interface_v3Contract } from '../artifacts/js/veru_oracle_interface_v3';
-import { Veru_oracle_data_v3Contract } from '../artifacts/js/veru_oracle_data_v3';
-import { Veru_oracle_checksum_v3Contract } from '../artifacts/js/veru_oracle_checksum_v3';
-import { AttestedData } from '../artifacts/js/types/veru_oracle_data_v3';
+import { getAttestedData, getReport, getReportData } from '../artifacts/js/leo2js/veru_oracle_data_v5';
+import { Veru_oracle_interface_v5Contract } from '../artifacts/js/veru_oracle_interface_v5';
+import { Veru_oracle_data_v5Contract } from '../artifacts/js/veru_oracle_data_v5';
+import { Veru_oracle_checksum_v5Contract } from '../artifacts/js/veru_oracle_checksum_v5';
+import { AttestedData } from '../artifacts/js/types/veru_oracle_data_v5';
 import { js2leo as js2leoCommon, LeoU128 } from '@doko-js/core';
 import { leo2js as leo2jsCommon } from '@doko-js/core';
 
@@ -17,9 +17,9 @@ import { hash } from "aleo-hasher";
 // Available modes are evaluate | execute (Check README.md for further description)
 const mode = ExecutionMode.SnarkExecute;
 // Contract class initialization
-const oracle_interface = new Veru_oracle_interface_v3Contract({ mode });
-const oracle_data = new Veru_oracle_data_v3Contract({ mode });
-const checkSum = new Veru_oracle_checksum_v3Contract({ mode });
+const oracle_interface = new Veru_oracle_interface_v5Contract({ mode });
+const oracle_data = new Veru_oracle_data_v5Contract({ mode });
+const checkSum = new Veru_oracle_checksum_v5Contract({ mode });
 
 
 const [owner, aleoUser2, aleoUser3] = oracle_interface.getAccounts();

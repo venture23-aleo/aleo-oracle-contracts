@@ -1,8 +1,8 @@
 import { ExecutionMode, parseJSONLikeString } from "@doko-js/core";
-import { Veru_oracle_data_v3Contract } from "../artifacts/js/veru_oracle_data_v3";
-import { getUniqueID } from "../artifacts/js/leo2js/veru_oracle_data_v3";
+import { Veru_oracle_data_v5Contract } from "../artifacts/js/veru_oracle_data_v5";
+import { getUniqueID } from "../artifacts/js/leo2js/veru_oracle_data_v5";
 
-const oracle = new Veru_oracle_data_v3Contract({mode: ExecutionMode.SnarkExecute});
+const oracle = new Veru_oracle_data_v5Contract({mode: ExecutionMode.SnarkExecute});
 
 let uniqueId =  getUniqueID(parseJSONLikeString( "{ chunk_1: 56440781192508629403198160677188546358u128, chunk_2: 252117865119545778245377439517424065830u128 }"));
 

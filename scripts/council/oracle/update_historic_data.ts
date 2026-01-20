@@ -4,18 +4,18 @@ import { getProposalStatus, validateExecution, validateProposer, validateVote } 
 
 import { getVotersWithYesVotes, padWithZeroAddress } from "../../../utils/voters";
 import { ExecutionMode } from "@doko-js/core";
-import { Veru_oracle_council_imp_v3Contract } from "../../../artifacts/js/veru_oracle_council_imp_v3";
-import { Veru_oracle_council_v3Contract } from "../../../artifacts/js/veru_oracle_council_v3";
+import { Veru_oracle_council_imp_v5Contract } from "../../../artifacts/js/veru_oracle_council_imp_v5";
+import { Veru_oracle_council_v5Contract } from "../../../artifacts/js/veru_oracle_council_v5";
 import { COUNCIL_TOTAL_PROPOSALS_INDEX, SUPPORTED_THRESHOLD, TAG_UPDATE_HISTORIC_DATA } from "../../../utils/constants";
-import { UpdateHistoricData  } from "../../../artifacts/js/types/veru_oracle_council_imp_v3";
-import { getUpdateHistoricDataLeo } from "../../../artifacts/js/js2leo/veru_oracle_council_imp_v3";
-import { ExternalProposal } from "../../../artifacts/js/types/veru_oracle_council_v3";
-import { getExternalProposalLeo } from "../../../artifacts/js/js2leo/veru_oracle_council_v3";
-import { AttestedData } from "../../../artifacts/js/types/veru_oracle_data_v3";
+import { UpdateHistoricData  } from "../../../artifacts/js/types/veru_oracle_council_imp_v5";
+import { getUpdateHistoricDataLeo } from "../../../artifacts/js/js2leo/veru_oracle_council_imp_v5";
+import { ExternalProposal } from "../../../artifacts/js/types/veru_oracle_council_v5";
+import { getExternalProposalLeo } from "../../../artifacts/js/js2leo/veru_oracle_council_v5";
+import { AttestedData } from "../../../artifacts/js/types/veru_oracle_data_v5";
 
 const mode = ExecutionMode.SnarkExecute;
-const council = new Veru_oracle_council_v3Contract({ mode, priorityFee: 10_000 });
-const councilImpl = new Veru_oracle_council_imp_v3Contract({ mode, priorityFee: 10_000 });
+const council = new Veru_oracle_council_v5Contract({ mode, priorityFee: 10_000 });
+const councilImpl = new Veru_oracle_council_imp_v5Contract({ mode, priorityFee: 10_000 });
 
 
 export const proposeUpdateHistoricData = async (is_sgx_attested_data: boolean, timestamped_hash: bigint, attested_data: AttestedData): Promise<number> => {

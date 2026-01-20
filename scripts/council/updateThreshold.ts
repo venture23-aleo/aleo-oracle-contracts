@@ -1,16 +1,16 @@
-import { Veru_oracle_council_v3Contract } from "../../artifacts/js/veru_oracle_council_v3";
+import { Veru_oracle_council_v5Contract } from "../../artifacts/js/veru_oracle_council_v5";
 import { hashStruct } from "../../utils/hash";
 import { COUNCIL_THRESHOLD_INDEX, COUNCIL_TOTAL_PROPOSALS_INDEX, SUPPORTED_THRESHOLD, TAG_UPDATE_THRESHOLD } from "../../utils/constants";
 import { getProposalStatus, validateExecution, validateProposer } from "./councilUtils";
 import { getVotersWithYesVotes, padWithZeroAddress } from "../../utils/voters";
 import { ExecutionMode } from "@doko-js/core";
-import { UpdateThreshold } from "../../artifacts/js/types/veru_oracle_council_v3";
-import { getUpdateThresholdLeo } from "../../artifacts/js/js2leo/veru_oracle_council_v3";
+import { UpdateThreshold } from "../../artifacts/js/types/veru_oracle_council_v5";
+import { getUpdateThresholdLeo } from "../../artifacts/js/js2leo/veru_oracle_council_v5";
 
 const mode = ExecutionMode.SnarkExecute;
 
 
-const council = new Veru_oracle_council_v3Contract({ mode, priorityFee: 10_000 });
+const council = new Veru_oracle_council_v5Contract({ mode, priorityFee: 10_000 });
 
 //////////////////////
 ///// Propose ////////

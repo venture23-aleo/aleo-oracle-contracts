@@ -1,9 +1,9 @@
 import { ExecutionMode, parseJSONLikeString } from '@doko-js/core';
-import { getDataChunk, getReportData, getReport, getUniqueID } from '../artifacts/js/leo2js/veru_oracle_data_v3';
-import { Veru_oracle_data_v3Contract } from '../artifacts/js/veru_oracle_data_v3';
-import { AttestedData } from '../artifacts/js/types/veru_oracle_data_v3';
-import { Veru_oracle_checksum_v3Contract } from '../artifacts/js/veru_oracle_checksum_v3';
-import { Veru_oracle_interface_v3Contract } from '../artifacts/js/veru_oracle_interface_v3';
+import { getDataChunk, getReportData, getReport, getUniqueID } from '../artifacts/js/leo2js/veru_oracle_data_v5';
+import { Veru_oracle_data_v5Contract } from '../artifacts/js/veru_oracle_data_v5';
+import { AttestedData } from '../artifacts/js/types/veru_oracle_data_v5';
+import { Veru_oracle_checksum_v5Contract } from '../artifacts/js/veru_oracle_checksum_v5';
+import { Veru_oracle_interface_v5Contract } from '../artifacts/js/veru_oracle_interface_v5';
 const TIMEOUT = 20000_000;
 import data from './new_file.json';
 import singleData from './aleo_request.json';
@@ -11,9 +11,9 @@ import singleData from './aleo_request.json';
 // Available modes are evaluate | execute (Check README.md for further description)
 const mode = ExecutionMode.SnarkExecute;
 // Contract class initialization
-const oracle_data = new Veru_oracle_data_v3Contract({ mode });
-const oracle_interface = new Veru_oracle_interface_v3Contract({ mode });
-const checkSum = new Veru_oracle_checksum_v3Contract({ mode });
+const oracle_data = new Veru_oracle_data_v5Contract({ mode });
+const oracle_interface = new Veru_oracle_interface_v5Contract({ mode });
+const checkSum = new Veru_oracle_checksum_v5Contract({ mode });
 
 const [owner, aleoUser2, aleoUser3] = oracle_data.getAccounts();
 const OWNER_INDEX = true;

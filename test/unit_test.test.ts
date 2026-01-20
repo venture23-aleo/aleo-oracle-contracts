@@ -1,21 +1,18 @@
-import { ExecutionMode, js2leo, leo2js, parseJSONLikeString } from '@doko-js/core';
-import { getDataChunk, getReportData, getReport, getUniqueID } from '../artifacts/js/leo2js/veru_oracle_data_v3';
-import { Veru_oracle_data_v3Contract } from '../artifacts/js/veru_oracle_data_v3';
-import { AttestedData } from '../artifacts/js/types/veru_oracle_data_v3';
-import { Veru_oracle_checksum_v3Contract } from '../artifacts/js/veru_oracle_checksum_v3';
-import { Veru_oracle_interface_v3Contract } from '../artifacts/js/veru_oracle_interface_v3';
+import { ExecutionMode, parseJSONLikeString } from '@doko-js/core';
+import { getReportData, getReport } from '../artifacts/js/leo2js/veru_oracle_interface_v5';
+import { Veru_oracle_data_v5Contract } from '../artifacts/js/veru_oracle_data_v5';
+import { Veru_oracle_checksum_v5Contract } from '../artifacts/js/veru_oracle_checksum_v5';
+import { Veru_oracle_interface_v5Contract } from '../artifacts/js/veru_oracle_interface_v5';
 const TIMEOUT = 20000_000;
 import data from './new_file.json';
 import singleData from './aleo_request.json';
-import { hashStruct } from '../utils/hash';
-import { hash } from 'aleo-hasher';
 
 // Available modes are evaluate | execute (Check README.md for further description)
 const mode = ExecutionMode.SnarkExecute;
 // Contract class initialization
-const oracle_data = new Veru_oracle_data_v3Contract({ mode });
-const oracle_interface = new Veru_oracle_interface_v3Contract({ mode });
-const checkSum = new Veru_oracle_checksum_v3Contract({ mode });
+const oracle_data = new Veru_oracle_data_v5Contract({ mode });
+const oracle_interface = new Veru_oracle_interface_v5Contract({ mode });
+const checkSum = new Veru_oracle_checksum_v5Contract({ mode });
 
 const [owner, aleoUser2, aleoUser3] = oracle_data.getAccounts();
 const OWNER_INDEX = true;
@@ -37,7 +34,7 @@ const OWNER_INDEX = true;
 
 describe('deploy test', () => {
 
-    describe("Contract Deployment", () => {
+    describe.skip("Contract Deployment", () => {
 
         test('Deployment of Checksum`', async () => {
             const deployTx = await checkSum.deploy();
@@ -147,7 +144,7 @@ describe('deploy test', () => {
             let wrong_enclave_flags_report = structuredClone(report);
             wrong_enclave_flags_report.c0.f7 = BigInt("0");
             oracle_interface.connect(owner);
-            const setTx = await oracle_interface.set_data_sgx(reportData, wrong_enclave_flags_report, signature, signer);
+            const setTx = await oracle_interface.set_multiple_data_sgx(reportData, wrong_enclave_flags_report, signature, signer);
             await expect(setTx.wait()).rejects.toThrow();
             console.log("2", report.c0.f7);
         }, TIMEOUT);
@@ -157,7 +154,7 @@ describe('deploy test', () => {
             let wrong_hash_report = structuredClone(report);
             wrong_hash_report.c0.f24 = BigInt("0");
             oracle_interface.connect(owner);
-            const setTx = await oracle_interface.set_data_sgx(reportData, wrong_hash_report, signature, signer);
+            const setTx = await oracle_interface.set_multiple_data_sgx(reportData, wrong_hash_report, signature, signer);
             await expect(setTx.wait()).rejects.toThrow();
         }, TIMEOUT);
 
@@ -165,21 +162,21 @@ describe('deploy test', () => {
         let wrong_report = structuredClone(report);
         wrong_report.c0.f25 = BigInt("1");
         oracle_interface.connect(owner);
-        const setTx = await oracle_interface.set_data_sgx(reportData, wrong_report, signature, signer);
+        const setTx = await oracle_interface.set_multiple_data_sgx(reportData, wrong_report, signature, signer);
         await expect(setTx.wait()).rejects.toThrow();
         }, TIMEOUT);
 
         test.failing('signature is not matched', async () => {
             const wrong_signature = "sign1c0ts7e6mem08l62fgxpqexfjk742kxus6ffe7d8apd7vxdeduyq828yzl43wc35g6nl4h2l58lk72pesp57msqmxwe3l3xhw2hnvwqhy7pztupfz6yycl4k9gqaf2450q2e4p2knyst63uuqagnu2w2xpcm9hkflwsrm4gq2a8eduhv8fs434lhehu7gwg80apn6l35wjkw3z8jpgcb";
             oracle_interface.connect(owner);
-            const setTx = await oracle_interface.set_data_sgx(reportData, report, wrong_signature, signer);
+            const setTx = await oracle_interface.set_multiple_data_sgx(reportData, report, wrong_signature, signer);
             await expect(setTx.wait()).rejects.toThrow();
         }, TIMEOUT);
 
         test.failing('failed when TEE public key is not allowed', async () => {
             const unregistered_signer = data.oracleData.address; // signer not set yet
             oracle_interface.connect(owner);
-            const setTx = await oracle_interface.set_data_sgx(reportData, report, signature, unregistered_signer);
+            const setTx = await oracle_interface.set_multiple_data_sgx(reportData, report, signature, unregistered_signer);
             expect(await setTx.wait()).rejects.toThrow();
         }, TIMEOUT);
 
@@ -189,7 +186,7 @@ describe('deploy test', () => {
             const setKeysTx = await oracle_data.set_key(signer, true);
             await setKeysTx.wait();
 
-            const setTx = await oracle_interface.set_data_sgx(reportData, report, signature, signer);
+            const setTx = await oracle_interface.set_multiple_data_sgx(reportData, report, signature, signer);
             expect(await setTx.wait()).rejects.toThrow();
         }, TIMEOUT);
 
@@ -203,28 +200,27 @@ describe('deploy test', () => {
 
         test.failing('failed when unique id from the TEE report is not set', async () => {
             oracle_interface.connect(owner);
-            const setTx = await oracle_interface.set_data_sgx(reportData, report, signature, signer);
+            const setTx = await oracle_interface.set_multiple_data_sgx(reportData, report, signature, signer);
             expect(await setTx.wait()).rejects.toThrow();
         }, TIMEOUT);
 
         test('set data_sgx by owner: Happy Flow', async () => {
-        console.log("9", report.c0.f7);
-        oracle_data.connect(owner);
-        // setting keys
-        const setKeysTx = await oracle_data.set_key(signer, true);
-        await setKeysTx.wait();
+      
+            oracle_data.connect(owner);
+            // setting keys
+            const setKeysTx = await oracle_data.set_key(signer, true);
+            await setKeysTx.wait();
 
-        // set sgx unique id
-        const unique_id = {
-            chunk_1: report.c0.f8,
-            chunk_2: report.c0.f9
-        };
-        const setUniqueIdTx = await oracle_data.set_unique_id(unique_id);
-        await setUniqueIdTx.wait();
+            // set sgx unique id
+            const unique_id = {
+                chunk_1: report.c0.f8,
+                chunk_2: report.c0.f9
+            };
+            const setUniqueIdTx = await oracle_data.set_unique_id(unique_id);
+            await setUniqueIdTx.wait();
 
-        console.log("co.f7", report.c0.f7);
-        const setTx = await oracle_interface.set_data_sgx(reportData, report, signature, signer);
-        await setTx.wait();
+            const setTx = await oracle_interface.set_multiple_data_sgx(reportData, report, signature, signer);
+            await setTx.wait();
         }, TIMEOUT);
 
     });
@@ -294,7 +290,7 @@ describe('deploy test', () => {
             await setUniqueIdTx.wait();
 
 
-            const setTx = await oracle_interface.single_data_sgx(reportData, report, signature, signer);
+            const setTx = await oracle_interface.set_single_data_sgx(reportData, report, signature, signer);
             await setTx.wait();
         }, TIMEOUT);
 

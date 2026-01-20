@@ -4,18 +4,18 @@ import { getProposalStatus, validateExecution, validateProposer, validateVote } 
 
 import { getVotersWithYesVotes, padWithZeroAddress } from "../../../utils/voters";
 import { ExecutionMode } from "@doko-js/core";
-import { Veru_oracle_council_imp_v3Contract } from "../../../artifacts/js/veru_oracle_council_imp_v3";
-import { Veru_oracle_council_v3Contract } from "../../../artifacts/js/veru_oracle_council_v3";
+import { Veru_oracle_council_imp_v5Contract } from "../../../artifacts/js/veru_oracle_council_imp_v5";
+import { Veru_oracle_council_v5Contract } from "../../../artifacts/js/veru_oracle_council_v5";
 import { COUNCIL_TOTAL_PROPOSALS_INDEX, SUPPORTED_THRESHOLD, TAG_SET_PCR_VALUES } from "../../../utils/constants";
-import { SetPcrValues  } from "../../../artifacts/js/types/veru_oracle_council_imp_v3";
-import { ExternalProposal } from "../../../artifacts/js/types/veru_oracle_council_v3";
-import { getExternalProposalLeo } from "../../../artifacts/js/js2leo/veru_oracle_council_v3";
-import { PcrValues } from "../../../artifacts/js/types/veru_oracle_data_v3";
-import { getSetPcrValuesLeo } from "../../../artifacts/js/js2leo/veru_oracle_council_imp_v3";
+import { SetPcrValues  } from "../../../artifacts/js/types/veru_oracle_council_imp_v5";
+import { ExternalProposal } from "../../../artifacts/js/types/veru_oracle_council_v5";
+import { getExternalProposalLeo } from "../../../artifacts/js/js2leo/veru_oracle_council_v5";
+import { PcrValues } from "../../../artifacts/js/types/veru_oracle_data_v5";
+import { getSetPcrValuesLeo } from "../../../artifacts/js/js2leo/veru_oracle_council_imp_v5";
 
 const mode = ExecutionMode.SnarkExecute;
-const council = new Veru_oracle_council_v3Contract({ mode, priorityFee: 10_000 });
-const councilImpl = new Veru_oracle_council_imp_v3Contract({ mode, priorityFee: 10_000 });
+const council = new Veru_oracle_council_v5Contract({ mode, priorityFee: 10_000 });
+const councilImpl = new Veru_oracle_council_imp_v5Contract({ mode, priorityFee: 10_000 });
 
 
 export const proposeSetPCRValues = async (pcr_values: PcrValues): Promise<number> => {

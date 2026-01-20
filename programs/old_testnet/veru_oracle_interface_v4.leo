@@ -1,12 +1,12 @@
-import veru_oracle_data_v3.aleo;
+import veru_oracle_data_v5.aleo;
 
 
-program veru_oracle_interface_v3.aleo {
+program veru_oracle_interface_v5.aleo {
 
     const ARRAY_SIZE: u8 = 10u8;
 
     // upgrade through the checksum mapping in another program
-    @checksum(mapping="veru_oracle_checksum_v3.aleo/approved_checksums", key="veru_oracle_interface_v3.aleo")
+    @checksum(mapping="veru_oracle_checksum_v5.aleo/approved_checksums", key="veru_oracle_interface_v5.aleo")
     async constructor() {
         // The Leo compiler automatically generates the constructor logic.
     }
@@ -18,14 +18,14 @@ program veru_oracle_interface_v3.aleo {
         public pub_key: address
         ) -> Future
         {
-            let set_timestampped_data: ( [TimestampedAttestation; ARRAY_SIZE], Future) = veru_oracle_data_v3.aleo/set_timestampped_data(
+            let set_timestampped_data: ( [TimestampedAttestation; ARRAY_SIZE], Future) = veru_oracle_data_v5.aleo/set_timestampped_data(
                 report_data,
                 report,
                 sig,
                 pub_key
             );
 
-            let set_request_hash_data : Future = veru_oracle_data_v3.aleo/set_request_hash_data(set_timestampped_data.0);
+            let set_request_hash_data : Future = veru_oracle_data_v5.aleo/set_request_hash_data(set_timestampped_data.0);
 
 
             return finalize_set_data_sgx(
@@ -51,7 +51,7 @@ program veru_oracle_interface_v3.aleo {
         public pub_key: address
         ) -> Future
         {
-            let set_data: Future = veru_oracle_data_v3.aleo/set_single_data_sgx(report_data, report, sig, pub_key);
+            let set_data: Future = veru_oracle_data_v5.aleo/set_single_data_sgx(report_data, report, sig, pub_key);
             return finalize_data_sgx(
             set_data
         );

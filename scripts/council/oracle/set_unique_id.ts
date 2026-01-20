@@ -4,19 +4,19 @@ import { getProposalStatus, validateExecution, validateProposer, validateVote } 
 
 import { getVotersWithYesVotes, padWithZeroAddress } from "../../../utils/voters";
 import { ExecutionMode, parseJSONLikeString } from "@doko-js/core";
-import { Veru_oracle_council_imp_v3Contract } from "../../../artifacts/js/veru_oracle_council_imp_v3";
-import { Veru_oracle_council_v3Contract } from "../../../artifacts/js/veru_oracle_council_v3";
+import { Veru_oracle_council_imp_v5Contract } from "../../../artifacts/js/veru_oracle_council_imp_v5";
+import { Veru_oracle_council_v5Contract } from "../../../artifacts/js/veru_oracle_council_v5";
 import { COUNCIL_TOTAL_PROPOSALS_INDEX, SUPPORTED_THRESHOLD, TAG_SET_UNIQUE_ID } from "../../../utils/constants";
-import { SetUniqueID,  } from "../../../artifacts/js/types/veru_oracle_council_imp_v3";
-import { getSetUniqueIDLeo } from "../../../artifacts/js/js2leo/veru_oracle_council_imp_v3";
-import { ExternalProposal } from "../../../artifacts/js/types/veru_oracle_council_v3";
-import { getExternalProposalLeo } from "../../../artifacts/js/js2leo/veru_oracle_council_v3";
-import { UniqueID } from "../../../artifacts/js/types/veru_oracle_data_v3";
-import { getUniqueID } from "../../../artifacts/js/leo2js/veru_oracle_data_v3";
+import { SetUniqueID,  } from "../../../artifacts/js/types/veru_oracle_council_imp_v5";
+import { getSetUniqueIDLeo } from "../../../artifacts/js/js2leo/veru_oracle_council_imp_v5";
+import { ExternalProposal } from "../../../artifacts/js/types/veru_oracle_council_v5";
+import { getExternalProposalLeo } from "../../../artifacts/js/js2leo/veru_oracle_council_v5";
+import { UniqueID } from "../../../artifacts/js/types/veru_oracle_data_v5";
+import { getUniqueID } from "../../../artifacts/js/leo2js/veru_oracle_data_v5";
 
 const mode = ExecutionMode.SnarkExecute;
-const council = new Veru_oracle_council_v3Contract({ mode, priorityFee: 10_000 });
-const councilImpl = new Veru_oracle_council_imp_v3Contract({ mode, priorityFee: 10_000 });
+const council = new Veru_oracle_council_v5Contract({ mode, priorityFee: 10_000 });
+const councilImpl = new Veru_oracle_council_imp_v5Contract({ mode, priorityFee: 10_000 });
 
 export const proposeSetUniqueID = async (unique_id: UniqueID): Promise<number> => {
 
@@ -117,9 +117,9 @@ export const execSetUniqueID = async (proposalId: number, unique_id: UniqueID) =
 
 async function run() {
 
-  let uniqueId = getUniqueID(parseJSONLikeString("{ chunk_1: 97629542126347321313557611409364902964u128, chunk_2: 319273416265687922804867843916602973391u128 }"));
-  const proposalId = await proposeSetUniqueID(uniqueId);
-  await execSetUniqueID(proposalId, uniqueId);
+  let uniqueId = getUniqueID(parseJSONLikeString("{ chunk_1: 159085935070706379164476640024583722901u128, chunk_2: 151460604538750032033434395478405436944u128 }"));
+  // const proposalId = await proposeSetUniqueID(uniqueId);
+  await execSetUniqueID(6, uniqueId);
 }
 
 run();

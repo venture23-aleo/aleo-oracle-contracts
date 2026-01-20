@@ -3,12 +3,12 @@
 import { ALEO_ZERO_ADDRESS } from "./constants";
 import { hashStruct } from "./hash";
 import { ExecutionMode } from "@doko-js/core";
-import { Veru_oracle_council_v3Contract } from "../artifacts/js/veru_oracle_council_v3";
-import { ProposalVote, ProposalVoterKey } from "../artifacts/js/types/veru_oracle_council_v3";
-import { getProposalVoteLeo } from "../artifacts/js/js2leo/veru_oracle_council_v3";
+import { Veru_oracle_council_v5Contract } from "../artifacts/js/veru_oracle_council_v5";
+import { ProposalVote, ProposalVoterKey } from "../artifacts/js/types/veru_oracle_council_v5";
+import { getProposalVoteLeo } from "../artifacts/js/js2leo/veru_oracle_council_v5";
 
 const mode = ExecutionMode.SnarkExecute;
-const council = new Veru_oracle_council_v3Contract({ mode });
+const council = new Veru_oracle_council_v5Contract({ mode });
 
 const getVoteKeys = (proposalHash: bigint, voters: string[]): bigint[] => {
   const voteKeys = []

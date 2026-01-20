@@ -1,11 +1,11 @@
-import veru_oracle_checksum_v3.aleo;
-import veru_oracle_council_v3.aleo;
-import veru_oracle_data_v3.aleo;
+import veru_oracle_checksum_v5.aleo;
+import veru_oracle_council_v5.aleo;
+import veru_oracle_data_v5.aleo;
 
-program veru_oracle_council_imp_v3.aleo
+program veru_oracle_council_imp_v5.aleo
 {   
     // upgrade through the checksum mapping in another program
-    @checksum(mapping="veru_oracle_checksum_v3.aleo/approved_checksums", key="veru_oracle_council_imp_v3.aleo")
+    @checksum(mapping="veru_oracle_checksum_v5.aleo/approved_checksums", key="veru_oracle_council_imp_v5.aleo")
     async constructor() {
         // The Leo compiler automatically generates the constructor logic.
     }
@@ -47,9 +47,9 @@ program veru_oracle_council_imp_v3.aleo
         let proposal_hash: field = BHP256::hash_to_field(proposal);
 
         // Execute the proposal
-        let transfering_ownership: Future = veru_oracle_data_v3.aleo/transfer_ownership(new_owner);
+        let transfering_ownership: Future = veru_oracle_data_v5.aleo/transfer_ownership(new_owner);
 
-        let external_execute: Future = veru_oracle_council_v3.aleo/external_execute(id, proposal_hash, voters);
+        let external_execute: Future = veru_oracle_council_v5.aleo/external_execute(id, proposal_hash, voters);
 
         return f_orc_transfer_ownership(transfering_ownership, external_execute);
     }
@@ -78,9 +78,9 @@ program veru_oracle_council_imp_v3.aleo
         let proposal_hash: field = BHP256::hash_to_field(proposal);
 
         // Execute the proposal
-        let setting_unique_id: Future = veru_oracle_data_v3.aleo/set_unique_id(unique_id);
+        let setting_unique_id: Future = veru_oracle_data_v5.aleo/set_unique_id(unique_id);
 
-        let external_execute: Future = veru_oracle_council_v3.aleo/external_execute(id, proposal_hash, voters);
+        let external_execute: Future = veru_oracle_council_v5.aleo/external_execute(id, proposal_hash, voters);
 
         return finalize_tb_set_unique_id(setting_unique_id, external_execute);
     }
@@ -114,9 +114,9 @@ program veru_oracle_council_imp_v3.aleo
         let proposal_hash: field = BHP256::hash_to_field(proposal);
 
         // Execute the proposal
-        let setting_keys : Future = veru_oracle_data_v3.aleo/set_key(keys, status);
+        let setting_keys : Future = veru_oracle_data_v5.aleo/set_key(keys, status);
 
-        let external_execute: Future = veru_oracle_council_v3.aleo/external_execute(id, proposal_hash, voters);
+        let external_execute: Future = veru_oracle_council_v5.aleo/external_execute(id, proposal_hash, voters);
 
         return finalize_tb_update_threshold(setting_keys, external_execute);
     }
@@ -147,9 +147,9 @@ program veru_oracle_council_imp_v3.aleo
         let proposal_hash: field = BHP256::hash_to_field(proposal);
 
         // Execute the proposal
-        let add_chain: Future = veru_oracle_data_v3.aleo/update_historic_data(timestamped_hash, attested_data);
+        let add_chain: Future = veru_oracle_data_v5.aleo/update_historic_data(timestamped_hash, attested_data);
 
-        let external_execute: Future = veru_oracle_council_v3.aleo/external_execute(id, proposal_hash, voters);
+        let external_execute: Future = veru_oracle_council_v5.aleo/external_execute(id, proposal_hash, voters);
         
         return finalize_tb_add_chain(add_chain, external_execute);
     }
@@ -178,9 +178,9 @@ program veru_oracle_council_imp_v3.aleo
         let proposal_hash: field = BHP256::hash_to_field(proposal);
 
         // Execute the proposal
-        let pausing: Future = veru_oracle_data_v3.aleo/pause();
+        let pausing: Future = veru_oracle_data_v5.aleo/pause();
 
-        let external_execute: Future = veru_oracle_council_v3.aleo/external_execute(id, proposal_hash, voters);
+        let external_execute: Future = veru_oracle_council_v5.aleo/external_execute(id, proposal_hash, voters);
 
         return finalize_tb_pause(pausing, external_execute);
     }
@@ -207,9 +207,9 @@ program veru_oracle_council_imp_v3.aleo
         let proposal_hash: field = BHP256::hash_to_field(proposal);
 
         // Execute the proposal
-        let unpausing: Future = veru_oracle_data_v3.aleo/unpause();
+        let unpausing: Future = veru_oracle_data_v5.aleo/unpause();
 
-        let external_execute: Future = veru_oracle_council_v3.aleo/external_execute(id, proposal_hash, voters);
+        let external_execute: Future = veru_oracle_council_v5.aleo/external_execute(id, proposal_hash, voters);
 
         return finalize_tb_unpause(unpausing, external_execute);
     }
@@ -237,9 +237,9 @@ program veru_oracle_council_imp_v3.aleo
         };
         let proposal_hash: field = BHP256::hash_to_field(proposal);
 
-        let update_pc: Future = veru_oracle_checksum_v3.aleo/update_program_checksum(program_address, approved_checksum);
+        let update_pc: Future = veru_oracle_checksum_v5.aleo/update_program_checksum(program_address, approved_checksum);
 
-        let external_execute: Future = veru_oracle_council_v3.aleo/external_execute(id, proposal_hash, voters);
+        let external_execute: Future = veru_oracle_council_v5.aleo/external_execute(id, proposal_hash, voters);
 
         return finalize_update_pc(external_execute, update_pc);
     }
@@ -269,9 +269,9 @@ program veru_oracle_council_imp_v3.aleo
         let proposal_hash: field = BHP256::hash_to_field(proposal);
 
         // Execute the proposal
-        let transfering_ownership: Future = veru_oracle_checksum_v3.aleo/set_admin(new_owner);
+        let transfering_ownership: Future = veru_oracle_checksum_v5.aleo/set_admin(new_owner);
 
-        let external_execute: Future = veru_oracle_council_v3.aleo/external_execute(id, proposal_hash, voters);
+        let external_execute: Future = veru_oracle_council_v5.aleo/external_execute(id, proposal_hash, voters);
 
         return f_cksm_transfer_ownership(transfering_ownership, external_execute);
     }

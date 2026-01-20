@@ -1,4 +1,4 @@
-program veru_oracle_council_v3.aleo {
+program veru_oracle_council_v5.aleo {
 
     @noupgrade
     async constructor() {

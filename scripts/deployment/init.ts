@@ -1,24 +1,24 @@
 import { ExecutionMode } from "@doko-js/core";
 
-import { Veru_oracle_data_v3Contract } from "../../artifacts/js/veru_oracle_data_v3";
-import { Veru_oracle_council_v3Contract } from "../../artifacts/js/veru_oracle_council_v3";
-import { Veru_oracle_council_imp_v3Contract } from "../../artifacts/js/veru_oracle_council_imp_v3";
-import { Veru_oracle_checksum_v3Contract } from "../../artifacts/js/veru_oracle_checksum_v3";
+import { Veru_oracle_data_v5Contract } from "../../artifacts/js/veru_oracle_data_v5";
+import { Veru_oracle_council_v5Contract } from "../../artifacts/js/veru_oracle_council_v5";
+import { Veru_oracle_council_imp_v5Contract } from "../../artifacts/js/veru_oracle_council_imp_v5";
+import { Veru_oracle_checksum_v5Contract } from "../../artifacts/js/veru_oracle_checksum_v5";
 
 const mode = ExecutionMode.SnarkExecute;
 
-const oracleDeploymentChecksum = new Veru_oracle_checksum_v3Contract({mode: mode});
-const oracle = new Veru_oracle_data_v3Contract({mode: mode});
-const council = new Veru_oracle_council_v3Contract({mode: mode});
-const councilImple = new Veru_oracle_council_imp_v3Contract({mode: mode});
+const oracleDeploymentChecksum = new Veru_oracle_checksum_v5Contract({mode: mode});
+const oracle = new Veru_oracle_data_v5Contract({mode: mode});
+const council = new Veru_oracle_council_v5Contract({mode: mode});
+const councilImple = new Veru_oracle_council_imp_v5Contract({mode: mode});
 
 
 const intialize = async (initialCouncilList: string[], initialCouncilThresholdData: number) => {
 
-  //Initialize council
-  console.log(`Initializing council with council members: ${initialCouncilList}` + ` and threshold: ${initialCouncilThresholdData}`);
-  const initializeCouncilTx = await council.initialize(initialCouncilList, initialCouncilThresholdData);
-  await initializeCouncilTx.wait();
+  // //Initialize council
+  // console.log(`Initializing council with council members: ${initialCouncilList}` + ` and threshold: ${initialCouncilThresholdData}`);
+  // const initializeCouncilTx = await council.initialize(initialCouncilList, initialCouncilThresholdData);
+  // await initializeCouncilTx.wait();
 
   //Initialize oracle Checksum contract 
   console.log(`Initializing upgradable handling contract: ${council.address()}`);
@@ -26,7 +26,7 @@ const intialize = async (initialCouncilList: string[], initialCouncilThresholdDa
   await initializeoracleDeploymentChecksumTx.wait();
 
   // Initialize oracle
-  console.log(`Initializing oracle with council address: ${council.address()}`);
+  console.log(`Initializing oracle with council address: ${councilImple.address()}`);
   const initializeOracleTx = await oracle.initialize(councilImple.address());
   await initializeOracleTx.wait();
 }

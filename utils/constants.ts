@@ -12,10 +12,9 @@ export const TAG_UPDATE_THRESHOLD = 3;
 
 export const TAG_TRANSFER_OWNERSHIP = 1;
 export const TAG_SET_UNIQUE_ID = 2;
-export const TAG_SET_PCR_VALUES = 3;
-export const TAG_SET_KEYS = 4;
-export const TAG_UPDATE_HISTORIC_DATA = 5;
-export const TAG_PAUSE = 6;
-export const TAG_UNPAUSE = 7;
+export const TAG_SET_KEYS = 3;
+export const TAG_UPDATE_HISTORIC_DATA = 4;
+export const TAG_PAUSE = 5;
+export const TAG_UNPAUSE = 6;
 
 export const ALEO_ZERO_ADDRESS = "aleo1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq3ljyzc";
